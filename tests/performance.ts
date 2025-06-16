@@ -1,5 +1,5 @@
-import { parseMermaid } from "./parser.ts";
-import { renderSvg, renderHtml, renderJson, renderMermaid } from "./renderers.ts";
+import { parseMermaid } from "../lib/parser.ts";
+import { renderSvg, renderHtml, renderJson, renderMermaid } from "../lib/renderers.ts";
 
 // Performance testing utilities
 export type BenchmarkResult = {

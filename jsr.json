@@ -1,0 +1,41 @@
+{
+  "name": "@rendermaid/core",
+  "version": "1.0.0",
+  "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rendermaid/core.git"
+  },
+  "homepage": "https://github.com/rendermaid/core",
+  "bugs": {
+    "url": "https://github.com/rendermaid/core/issues"
+  },
+  "author": {
+    "name": "RenderMaid Team"
+  },
+  "keywords": [
+    "mermaid",
+    "diagrams",
+    "flowchart",
+    "parser",
+    "renderer",
+    "svg",
+    "typescript",
+    "functional-programming",
+    "ast",
+    "visualization"
+  ],
+  "exports": {
+    ".": "./mod.ts"
+  },
+  "publish": {
+    "exclude": [
+      "*.svg",
+      "performance.ts",
+      "main.ts",
+      "debug-*.ts",
+      "baseline.txt"
+    ]
+  }
+}
