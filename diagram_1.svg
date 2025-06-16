@@ -14,21 +14,29 @@
       text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white;
     }
   </style>
-  <polygon points="460,420 500,400 540,420 500,440" class="node-rhombus dark" stroke="currentColor" fill="none"/>
-       <text x="500" y="420" text-anchor="middle" dominant-baseline="central">decision</text>
-  <rect x="400" y="40" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
-       <text x="440" y="60" text-anchor="middle" dominant-baseline="central">process a</text>
-  <rect x="460" y="220" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
-       <text x="500" y="240" text-anchor="middle" dominant-baseline="central">process</text>
-  <rect x="520" y="40" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
-       <text x="560" y="60" text-anchor="middle" dominant-baseline="central">process b</text>
-  <path d="M 500 420 L 500 420" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
-          <polygon points="500,420 493.0717967697245,424 493.0717967697245,416" fill="currentColor"/>
+  <rect x="460" y="40" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="60" text-anchor="middle" dominant-baseline="central">start</text>
+  <polygon points="460,240 500,220 540,240 500,260" class="node-rhombus dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="240" text-anchor="middle" dominant-baseline="central">decision</text>
+  <rect x="400" y="400" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="440" y="420" text-anchor="middle" dominant-baseline="central">process a</text>
+  <rect x="520" y="400" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="560" y="420" text-anchor="middle" dominant-baseline="central">process b</text>
+  <rect x="460" y="580" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="600" text-anchor="middle" dominant-baseline="central">end</text>
+  <path d="M 500 85 L 500 215" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="500,215 496,208.0717967697245 504,208.0717967697245" fill="currentColor"/>
           
-  <path d="M 448.3333333333333 85 L 491.6666666666667 215" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
-          <polygon points="491.6666666666667,215 485.68104324444397,209.69224037400537 493.27050962884806,207.16241824587064" fill="currentColor"/>
+  <path d="M 491.6666666666667 265 L 448.3333333333333 395" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="448.3333333333333,395 446.72949037115194,387.16241824587064 454.31895675555603,389.69224037400534" fill="currentColor"/>
+          <text x="448.3333333333333" y="390" text-anchor="middle" font-size="10" fill="currentColor" class="edge-label">Yes</text>
+  <path d="M 508.3333333333333 265 L 551.6666666666666 395" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="551.6666666666666,395 545.6810432444439,389.69224037400534 553.270509628848,387.16241824587064" fill="currentColor"/>
+          <text x="551.6666666666666" y="390" text-anchor="middle" font-size="10" fill="currentColor" class="edge-label">No</text>
+  <path d="M 448.3333333333333 445 L 491.6666666666667 575" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="491.6666666666667,575 485.68104324444397,569.6922403740053 493.27050962884806,567.1624182458706" fill="currentColor"/>
           
-  <path d="M 551.6666666666666 85 L 508.3333333333333 215" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
-          <polygon points="508.3333333333333,215 506.72949037115194,207.16241824587067 514.3189567555561,209.69224037400537" fill="currentColor"/>
+  <path d="M 551.6666666666666 445 L 508.3333333333333 575" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="508.3333333333333,575 506.72949037115194,567.1624182458706 514.3189567555561,569.6922403740053" fill="currentColor"/>
           
 </svg>

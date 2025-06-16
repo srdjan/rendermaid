@@ -150,7 +150,7 @@ const REGEX_CACHE = {
   identifier: /[a-zA-Z_][a-zA-Z0-9_]*/,
 } as const;
 
-// Fast line tokenizer
+// Fast line tokenizer - properly anchored patterns
 const tokenizeLine = (line: string): Array<{ type: string; value: string; position: number }> => {
   const tokens: Array<{ type: string; value: string; position: number }> = [];
   let position = 0;
@@ -165,10 +165,12 @@ const tokenizeLine = (line: string): Array<{ type: string; value: string; positi
       continue;
     }
     
-    // Try shape patterns first (most common)
+    // Try shape patterns first - anchored to start with ^
     let matched = false;
     for (const { pattern, shape } of SHAPE_PATTERNS) {
-      const match = remaining.match(pattern);
+      // Create anchored version of pattern
+      const anchoredPattern = new RegExp('^' + pattern.source);
+      const match = remaining.match(anchoredPattern);
       if (match) {
         tokens.push({
           type: 'node',
@@ -183,9 +185,10 @@ const tokenizeLine = (line: string): Array<{ type: string; value: string; positi
     
     if (matched) continue;
     
-    // Try connection patterns
+    // Try connection patterns - anchored to start
     for (const { pattern, type } of CONNECTION_PATTERNS) {
-      const match = remaining.match(pattern);
+      const anchoredPattern = new RegExp('^' + pattern.source);
+      const match = remaining.match(anchoredPattern);
       if (match) {
         tokens.push({
           type: 'connection',
@@ -200,19 +203,7 @@ const tokenizeLine = (line: string): Array<{ type: string; value: string; positi
     
     if (matched) continue;
     
-    // Try identifier
-    const idMatch = remaining.match(REGEX_CACHE.identifier);
-    if (idMatch) {
-      tokens.push({
-        type: 'identifier',
-        value: idMatch[0],
-        position
-      });
-      position += idMatch[0].length;
-      continue;
-    }
-    
-    // Try edge label |text|
+    // Try edge label |text| - must start with |
     if (remaining.startsWith('|')) {
       const labelEnd = remaining.indexOf('|', 1);
       if (labelEnd > 0) {
@@ -226,6 +217,18 @@ const tokenizeLine = (line: string): Array<{ type: string; value: string; positi
       }
     }
     
+    // Try identifier - anchored to start
+    const idMatch = remaining.match(/^[a-zA-Z_][a-zA-Z0-9_]*/);
+    if (idMatch) {
+      tokens.push({
+        type: 'identifier',
+        value: idMatch[0],
+        position
+      });
+      position += idMatch[0].length;
+      continue;
+    }
+    
     // Skip unknown character
     position++;
   }
@@ -233,35 +236,27 @@ const tokenizeLine = (line: string): Array<{ type: string; value: string; positi
   return tokens;
 };
 
-// Parse edge from tokens
+// Parse edge from tokens - handles more complex edge patterns
 const parseEdgeFromTokens = (tokens: Array<{ type: string; value: string; position: number }>): {
   nodes: Array<{ id: string; label: string; shape: NodeShape }>;
   edge: MermaidEdge | null;
 } | null => {
   if (tokens.length < 3) return null;
   
-  let fromNode: { id: string; label: string; shape: NodeShape } | null = null;
-  let toNode: { id: string; label: string; shape: NodeShape } | null = null;
+  const nodeTokens: Array<{ id: string; label: string; shape: NodeShape }> = [];
   let connectionType: ConnectionType = "arrow";
   let edgeLabel: string | undefined;
   
+  // First pass: collect all nodes and connection info
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
     
     if (token.type === 'node') {
       const nodeData = JSON.parse(token.value);
-      if (!fromNode) {
-        fromNode = nodeData;
-      } else if (!toNode) {
-        toNode = nodeData;
-      }
+      nodeTokens.push(nodeData);
     } else if (token.type === 'identifier') {
       const nodeData = { id: token.value, label: token.value, shape: "rectangle" as const };
-      if (!fromNode) {
-        fromNode = nodeData;
-      } else if (!toNode) {
-        toNode = nodeData;
-      }
+      nodeTokens.push(nodeData);
     } else if (token.type === 'connection') {
       connectionType = token.value as ConnectionType;
     } else if (token.type === 'label') {
@@ -269,10 +264,14 @@ const parseEdgeFromTokens = (tokens: Array<{ type: string; value: string; positi
     }
   }
   
-  if (!fromNode || !toNode) return null;
+  // Need at least 2 nodes for an edge
+  if (nodeTokens.length < 2) return null;
+  
+  const fromNode = nodeTokens[0];
+  const toNode = nodeTokens[1];
   
   return {
-    nodes: [fromNode, toNode],
+    nodes: nodeTokens,
     edge: createEdge(fromNode.id, toNode.id, connectionType, edgeLabel)
   };
 };
