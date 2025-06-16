@@ -1,6 +1,9 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts"
+    "dev": "deno run --watch main.ts",
+    "perf": "deno run --allow-write performance.ts",
+    "perf-baseline": "deno run --allow-write performance.ts > baseline.txt",
+    "perf-compare": "deno run --allow-write compare-performance.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1"
