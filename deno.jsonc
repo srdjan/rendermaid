@@ -1,0 +1,106 @@
+{
+  // RenderMaid - High-performance Mermaid diagram processing library
+  "name": "@rendermaid/core",
+  "version": "0.0.1",
+  "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance and multi-format output",
+  "license": "MIT",
+  
+  // Repository information
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rendermaid/core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rendermaid/core/issues"
+  },
+  "homepage": "https://github.com/rendermaid/core",
+  
+  // Package metadata for discovery
+  "keywords": [
+    "mermaid",
+    "diagrams", 
+    "flowchart",
+    "parser",
+    "renderer",
+    "svg",
+    "html",
+    "json",
+    "typescript",
+    "functional-programming",
+    "ast",
+    "visualization",
+    "performance",
+    "deno",
+    "jsr"
+  ],
+  
+  "author": {
+    "name": "RenderMaid Team",
+    "email": "team@rendermaid.dev"
+  },
+  
+  // Module exports
+  "exports": {
+    ".": "./mod.ts"
+  },
+  
+  // Development tasks
+  "tasks": {
+    "test": "deno test --allow-write",
+    "test-watch": "deno test --allow-write --watch", 
+    "e2e": "deno run --allow-write ./tests/e2e.ts",
+    "dev": "deno run --allow-write main.ts",
+    "demo": "deno run --allow-write main.ts",
+    "perf": "deno run --allow-write performance.ts",
+    "publish": "deno publish",
+    "fmt": "deno fmt",
+    "lint": "deno lint",
+    "check": "deno check mod.ts"
+  },
+  
+  // Dependencies
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  },
+  
+  // TypeScript configuration
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true
+  },
+  
+  // Code formatting
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve",
+    "include": ["src/", "tests/", "examples/", "*.ts", "*.tsx", "*.js", "*.jsx"],
+    "exclude": ["node_modules/", "dist/", "build/"]
+  },
+  
+  // Linting configuration
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"]
+    },
+    "include": ["src/", "tests/", "examples/", "*.ts", "*.tsx"],
+    "exclude": ["node_modules/", "dist/", "build/"]
+  },
+  
+  // Test configuration
+  "test": {
+    "include": ["tests/"],
+    "exclude": ["node_modules/", "dist/"]
+  }
+}

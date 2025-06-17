@@ -2,7 +2,7 @@
  * Utility functions for AST analysis, validation, and transformation
  */
 
-import { type MermaidAST, type MermaidNode, type MermaidEdge } from "./parser.ts";
+import { type MermaidAST } from "./parser.ts";
 
 export type OutputTarget = "file" | "console" | "memory";
 

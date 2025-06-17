@@ -1,18 +1,20 @@
 {
   "name": "@rendermaid/core",
   "version": "0.0.1",
-  "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams",
+  "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance, multi-format output, and comprehensive type safety",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rendermaid/core.git"
   },
-  "homepage": "https://github.com/rendermaid/core",
+  "homepage": "https://github.com/rendermaid/core#readme",
   "bugs": {
     "url": "https://github.com/rendermaid/core/issues"
   },
   "author": {
-    "name": "RenderMaid Team"
+    "name": "RenderMaid Team",
+    "email": "team@rendermaid.dev",
+    "url": "https://github.com/rendermaid"
   },
   "keywords": [
     "mermaid",
@@ -21,21 +23,51 @@
     "parser",
     "renderer",
     "svg",
+    "html",
+    "json",
     "typescript",
     "functional-programming",
     "ast",
-    "visualization"
+    "visualization",
+    "performance",
+    "deno",
+    "jsr",
+    "immutable",
+    "type-safe",
+    "edge-routing",
+    "spatial-grid"
   ],
   "exports": {
-    ".": "./mod.ts"
+    ".": "./mod.ts",
+    "./docs": "./docs.ts"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/rendermaid"
   },
   "publish": {
+    "include": [
+      "mod.ts",
+      "docs.ts", 
+      "lib/",
+      "examples/",
+      "tests/",
+      "README.md",
+      "LICENSE",
+      "deno.json",
+      "deno.jsonc",
+      "jsr.json"
+    ],
     "exclude": [
       "*.svg",
       "performance.ts",
-      "main.ts",
+      "main.ts", 
       "debug-*.ts",
-      "baseline.txt"
+      "baseline.txt",
+      "node_modules/",
+      ".git/",
+      "dist/",
+      "build/"
     ]
   }
 }
