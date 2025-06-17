@@ -1,21 +1,35 @@
 /**
  * Utility functions for AST analysis, validation, and transformation
+ * @module utils
  */
 
 import { type MermaidAST } from "./parser.ts";
 
+/**
+ * Available output targets for rendering operations
+ */
 export type OutputTarget = "file" | "console" | "memory";
 
+/**
+ * Comprehensive analysis results for a Mermaid AST
+ */
 export interface ASTAnalysis {
+  /** Overall complexity score based on nodes, edges, and variety */
   complexity: number;
+  /** Count of each node shape type used */
   nodeShapes: Record<string, number>;
+  /** Count of each edge type used */
   edgeTypes: Record<string, number>;
+  /** Maximum depth of the diagram graph */
   depth: number;
+  /** Whether the diagram contains cycles */
   cycleDetected: boolean;
 }
 
 /**
- * Analyze AST structure and complexity
+ * Analyzes AST structure and calculates complexity metrics
+ * @param ast The Abstract Syntax Tree to analyze
+ * @returns Detailed analysis results including complexity, shapes, and structure
  */
 export function analyzeAST(ast: MermaidAST): ASTAnalysis {
   const nodeShapes: Record<string, number> = {};
@@ -44,7 +58,9 @@ export function analyzeAST(ast: MermaidAST): ASTAnalysis {
 }
 
 /**
- * Validate AST structure
+ * Validates AST structure and returns any integrity issues found
+ * @param ast The Abstract Syntax Tree to validate
+ * @returns Array of validation error messages (empty if valid)
  */
 export function validateAST(ast: MermaidAST): string[] {
   const errors: string[] = [];
@@ -70,7 +86,11 @@ export function validateAST(ast: MermaidAST): string[] {
 }
 
 /**
- * Transform AST using a transformer function
+ * Transforms an AST using a provided transformer function
+ * @template T The specific AST type being transformed
+ * @param ast The Abstract Syntax Tree to transform
+ * @param transformer Function that takes an AST and returns a modified AST
+ * @returns The transformed AST
  */
 export function transformAST<T extends MermaidAST>(
   ast: T, 
@@ -80,7 +100,9 @@ export function transformAST<T extends MermaidAST>(
 }
 
 /**
- * Enhance AST with additional metadata
+ * Enhances an AST by adding analysis metadata and timestamp
+ * @param ast The Abstract Syntax Tree to enhance
+ * @returns New AST instance with additional metadata
  */
 export function enhanceAST(ast: MermaidAST): MermaidAST {
   const analysis = analyzeAST(ast);
@@ -95,14 +117,22 @@ export function enhanceAST(ast: MermaidAST): MermaidAST {
 }
 
 /**
- * Function composition utility
+ * Composes multiple functions into a single function that applies them right-to-left
+ * @template T The type that flows through the composed functions
+ * @param fns Array of functions to compose
+ * @returns A single composed function
  */
 export function compose<T>(...fns: Array<(x: T) => T>): (x: T) => T {
   return (x: T) => fns.reduceRight((acc, fn) => fn(acc), x);
 }
 
 /**
- * Performance monitoring wrapper
+ * Wraps a function with performance monitoring that logs execution time
+ * @template T The argument types of the function
+ * @template R The return type of the function
+ * @param fn The function to monitor
+ * @param label Label to use in the performance log
+ * @returns Wrapped function that logs execution time
  */
 export function withPerformanceMonitoring<T extends any[], R>(
   fn: (...args: T) => R,
@@ -118,7 +148,9 @@ export function withPerformanceMonitoring<T extends any[], R>(
 }
 
 /**
- * Render for specific target
+ * Returns a target-specific output string for rendering operations
+ * @param target The output target to render for
+ * @returns A string indicating the target type
  */
 export function renderForTarget(target: OutputTarget): string {
   switch (target) {

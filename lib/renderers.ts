@@ -1,41 +1,72 @@
-// Optimized renderers with caching and improved algorithms
+/**
+ * Optimized renderers with caching and improved algorithms
+ * @module renderers
+ */
 import { match } from "npm:ts-pattern@5.0.5";
 import type {
   Result, MermaidAST, MermaidNode, MermaidEdge
 } from "./parser.ts";
 import { Ok, getNodeShapeSymbols } from "./parser.ts";
 
-// Renderer configuration using discriminated unions
+/**
+ * Discriminated union of all available render formats and their configurations
+ */
 export type RenderFormat =
   | { readonly type: "svg"; readonly config: SvgConfig }
   | { readonly type: "html"; readonly config: HtmlConfig }
   | { readonly type: "json"; readonly config: JsonConfig }
   | { readonly type: "mermaid"; readonly config: MermaidConfig };
 
+/**
+ * Configuration options for SVG rendering
+ */
 export type SvgConfig = {
+  /** Width of the SVG canvas in pixels */
   readonly width: number;
+  /** Height of the SVG canvas in pixels */
   readonly height: number;
+  /** Spacing between nodes in pixels */
   readonly nodeSpacing: number;
+  /** Visual theme for the diagram */
   readonly theme: "light" | "dark" | "neutral";
 };
 
+/**
+ * Configuration options for HTML rendering
+ */
 export type HtmlConfig = {
+  /** Optional CSS class name for the container */
   readonly className?: string;
+  /** Whether to include inline CSS styles */
   readonly includeStyles: boolean;
+  /** Whether to make the output responsive */
   readonly responsive: boolean;
 };
 
+/**
+ * Configuration options for JSON export
+ */
 export type JsonConfig = {
+  /** Whether to format the JSON with indentation */
   readonly pretty: boolean;
+  /** Whether to include metadata in the output */
   readonly includeMetadata: boolean;
 };
 
+/**
+ * Configuration options for Mermaid syntax output
+ */
 export type MermaidConfig = {
+  /** Whether to preserve original formatting */
   readonly preserveFormatting: boolean;
+  /** Whether to include comments in the output */
   readonly includeComments: boolean;
 };
 
-// Renderer function type - pure transformation
+/**
+ * Generic renderer function type - pure transformation from AST to string
+ * @template T The configuration type for this renderer
+ */
 export type Renderer<T> = (ast: MermaidAST, config: T) => Result<string>;
 
 // Position calculation for layout (functional approach)
@@ -357,7 +388,12 @@ const renderOptimizedSvgEdge = (edge: MermaidEdge, pathPoints: Position[]): stri
           ${edgeLabelElement}`;
 };
 
-// Optimized SVG renderer with caching and batching
+/**
+ * Direct SVG renderer with optimized layout calculation and edge routing
+ * @param ast The Abstract Syntax Tree to render
+ * @param config SVG rendering configuration
+ * @returns A Result containing the SVG string or an error
+ */
 export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
   const layout = optimizedCalculateLayout(ast, config);
   const nodes = Array.from(ast.nodes.values());
@@ -420,7 +456,12 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
   return Ok(svg);
 };
 
-// HTML Renderer with Web Components approach
+/**
+ * Direct HTML renderer that creates semantic HTML structure
+ * @param ast The Abstract Syntax Tree to render
+ * @param config HTML rendering configuration
+ * @returns A Result containing the HTML string or an error
+ */
 export const htmlRenderer: Renderer<HtmlConfig> = (ast, config) => {
   const { diagramType } = ast;
   const nodes = Array.from(ast.nodes.values());
@@ -478,7 +519,12 @@ export const htmlRenderer: Renderer<HtmlConfig> = (ast, config) => {
   return Ok(html);
 };
 
-// JSON Renderer for data exchange
+/**
+ * Direct JSON renderer that exports AST as structured data
+ * @param ast The Abstract Syntax Tree to export
+ * @param config JSON export configuration
+ * @returns A Result containing the JSON string or an error
+ */
 export const jsonRenderer: Renderer<JsonConfig> = (ast, config) => {
   const serializable = {
     diagramType: ast.diagramType,
@@ -501,7 +547,12 @@ export const jsonRenderer: Renderer<JsonConfig> = (ast, config) => {
   return Ok(json);
 };
 
-// Mermaid Renderer (round-trip)
+/**
+ * Direct Mermaid renderer that converts AST back to Mermaid syntax
+ * @param ast The Abstract Syntax Tree to convert
+ * @param _config Mermaid output configuration (currently unused)
+ * @returns A Result containing the Mermaid syntax string or an error
+ */
 export const mermaidRenderer: Renderer<MermaidConfig> = (ast, _config) => {
   const { diagramType } = ast;
 
@@ -535,7 +586,12 @@ export const mermaidRenderer: Renderer<MermaidConfig> = (ast, _config) => {
   return Ok(mermaid);
 };
 
-// Universal render function using pattern matching
+/**
+ * Universal render function that can output to any supported format
+ * @param ast The Abstract Syntax Tree to render
+ * @param format The render format and configuration
+ * @returns A Result containing the rendered output or an error
+ */
 export const render = (ast: MermaidAST, format: RenderFormat): Result<string> =>
   match(format)
     .with({ type: "svg" }, ({ config }) => svgRenderer(ast, config))
@@ -544,7 +600,12 @@ export const render = (ast: MermaidAST, format: RenderFormat): Result<string> =>
     .with({ type: "mermaid" }, ({ config }) => mermaidRenderer(ast, config))
     .exhaustive();
 
-// Convenience functions for common render configurations
+/**
+ * Renders a Mermaid AST to SVG format with optional configuration
+ * @param ast The Abstract Syntax Tree to render
+ * @param config Optional SVG rendering configuration (uses defaults if not provided)
+ * @returns A Result containing the SVG string or an error
+ */
 export const renderSvg = (ast: MermaidAST, config?: Partial<SvgConfig>): Result<string> =>
   render(ast, {
     type: "svg",
@@ -557,6 +618,12 @@ export const renderSvg = (ast: MermaidAST, config?: Partial<SvgConfig>): Result<
     }
   });
 
+/**
+ * Renders a Mermaid AST to HTML format with optional configuration
+ * @param ast The Abstract Syntax Tree to render
+ * @param config Optional HTML rendering configuration (uses defaults if not provided)
+ * @returns A Result containing the HTML string or an error
+ */
 export const renderHtml = (ast: MermaidAST, config?: Partial<HtmlConfig>): Result<string> =>
   render(ast, {
     type: "html",
@@ -567,6 +634,12 @@ export const renderHtml = (ast: MermaidAST, config?: Partial<HtmlConfig>): Resul
     }
   });
 
+/**
+ * Exports a Mermaid AST to JSON format with optional configuration
+ * @param ast The Abstract Syntax Tree to export
+ * @param config Optional JSON export configuration (uses defaults if not provided)
+ * @returns A Result containing the JSON string or an error
+ */
 export const renderJson = (ast: MermaidAST, config?: Partial<JsonConfig>): Result<string> =>
   render(ast, {
     type: "json",
@@ -577,6 +650,12 @@ export const renderJson = (ast: MermaidAST, config?: Partial<JsonConfig>): Resul
     }
   });
 
+/**
+ * Converts a Mermaid AST back to Mermaid syntax with optional configuration
+ * @param ast The Abstract Syntax Tree to convert
+ * @param config Optional Mermaid output configuration (uses defaults if not provided)
+ * @returns A Result containing the Mermaid syntax string or an error
+ */
 export const renderMermaid = (ast: MermaidAST, config?: Partial<MermaidConfig>): Result<string> =>
   render(ast, {
     type: "mermaid",

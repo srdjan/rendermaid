@@ -5,7 +5,7 @@
  * for the RenderMaid Mermaid diagram processing library.
  * 
  * @module docs
- * @version 0.0.1
+ * @version 0.0.3
  * @author RenderMaid Team
  * @since 0.0.1
  */

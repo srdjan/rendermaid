@@ -1,15 +1,37 @@
-// Optimized Mermaid parser with improved performance
+/**
+ * Optimized Mermaid parser with improved performance
+ * @module parser
+ */
 import { match } from "npm:ts-pattern@5.0.5";
 
-// Base Result type for error handling
+/**
+ * Result type for operations that can succeed or fail
+ * @template T The type of the successful result
+ * @template E The type of the error (defaults to string)
+ */
 export type Result<T, E = string> =
   | { readonly success: true; readonly data: T }
   | { readonly success: false; readonly error: E };
 
+/**
+ * Creates a successful result
+ * @template T The type of the data
+ * @param data The successful data value
+ * @returns A successful Result containing the data
+ */
 export const Ok = <T>(data: T): Result<T> => ({ success: true, data });
+
+/**
+ * Creates an error result
+ * @template E The type of the error
+ * @param error The error value
+ * @returns A failed Result containing the error
+ */
 export const Err = <E>(error: E): Result<never, E> => ({ success: false, error });
 
-// Node shape types
+/**
+ * Available node shapes for Mermaid diagrams
+ */
 export type NodeShape =
   | "rectangle"
   | "rounded"
@@ -18,7 +40,9 @@ export type NodeShape =
   | "hexagon"
   | "stadium";
 
-// Connection types
+/**
+ * Available connection types for edges between nodes
+ */
 export type ConnectionType =
   | "arrow"
   | "line"
@@ -26,7 +50,9 @@ export type ConnectionType =
   | "dotted"
   | "dashed";
 
-// Core AST Node types using discriminated unions
+/**
+ * Represents a single node in a Mermaid diagram
+ */
 export type MermaidNode = {
   readonly id: string;
   readonly label: string;
@@ -34,15 +60,25 @@ export type MermaidNode = {
   readonly metadata?: ReadonlyMap<string, unknown>;
 };
 
+/**
+ * Represents a connection between two nodes in a Mermaid diagram
+ */
 export type MermaidEdge = {
+  /** Source node identifier */
   readonly from: string;
+  /** Target node identifier */
   readonly to: string;
+  /** Optional label text for the edge */
   readonly label?: string;
+  /** Visual style of the connection */
   readonly type: ConnectionType;
+  /** Optional metadata associated with the edge */
   readonly metadata?: ReadonlyMap<string, unknown>;
 };
 
-// Diagram types using algebraic data types
+/**
+ * Supported diagram types with their specific configurations
+ */
 export type DiagramType =
   | { readonly type: "flowchart"; readonly direction: FlowchartDirection }
   | { readonly type: "sequence"; readonly participants: readonly string[] }
@@ -50,17 +86,33 @@ export type DiagramType =
   | { readonly type: "classDiagram" }
   | { readonly type: "stateDiagram" };
 
+/**
+ * Layout directions available for flowchart diagrams
+ */
 export type FlowchartDirection = "TD" | "TB" | "BT" | "RL" | "LR";
 
-// Complete AST representation
+/**
+ * Complete Abstract Syntax Tree representation of a Mermaid diagram
+ */
 export type MermaidAST = {
+  /** The type and configuration of the diagram */
   readonly diagramType: DiagramType;
+  /** Map of all nodes in the diagram indexed by their ID */
   readonly nodes: ReadonlyMap<string, MermaidNode>;
+  /** Array of all edges connecting nodes */
   readonly edges: readonly MermaidEdge[];
+  /** Additional metadata about the diagram */
   readonly metadata: ReadonlyMap<string, unknown>;
 };
 
-// Immutable AST builder functions
+/**
+ * Creates a new diagram node with the specified properties
+ * @param id Unique identifier for the node
+ * @param label Display text for the node
+ * @param shape Visual shape of the node (defaults to "rectangle")
+ * @param metadata Optional metadata to associate with the node
+ * @returns A new MermaidNode instance
+ */
 export const createNode = (
   id: string,
   label: string,
@@ -73,6 +125,15 @@ export const createNode = (
   metadata,
 });
 
+/**
+ * Creates a new edge connecting two nodes
+ * @param from Source node identifier
+ * @param to Target node identifier
+ * @param type Visual style of the connection (defaults to "arrow")
+ * @param label Optional label text for the edge
+ * @param metadata Optional metadata to associate with the edge
+ * @returns A new MermaidEdge instance
+ */
 export const createEdge = (
   from: string,
   to: string,
@@ -87,6 +148,14 @@ export const createEdge = (
   metadata,
 });
 
+/**
+ * Creates a new empty AST with the specified diagram type
+ * @param diagramType The type and configuration of the diagram
+ * @param nodes Initial map of nodes (defaults to empty)
+ * @param edges Initial array of edges (defaults to empty)
+ * @param metadata Initial metadata map (defaults to empty)
+ * @returns A new MermaidAST instance
+ */
 export const createAST = (
   diagramType: DiagramType,
   nodes: ReadonlyMap<string, MermaidNode> = new Map(),
@@ -99,7 +168,12 @@ export const createAST = (
   metadata,
 });
 
-// Functional AST manipulation
+/**
+ * Adds a node to an existing AST, returning a new AST instance
+ * @param ast The AST to add the node to
+ * @param node The node to add
+ * @returns A new AST instance with the node added
+ */
 export const addNode = (ast: MermaidAST, node: MermaidNode): MermaidAST => {
   const newNodes = new Map(ast.nodes);
   newNodes.set(node.id, node);
@@ -109,12 +183,22 @@ export const addNode = (ast: MermaidAST, node: MermaidNode): MermaidAST => {
   };
 };
 
+/**
+ * Adds an edge to an existing AST, returning a new AST instance
+ * @param ast The AST to add the edge to
+ * @param edge The edge to add
+ * @returns A new AST instance with the edge added
+ */
 export const addEdge = (ast: MermaidAST, edge: MermaidEdge): MermaidAST => ({
   ...ast,
   edges: [...ast.edges, edge],
 });
 
-// Type-safe node shape matching
+/**
+ * Gets the opening and closing symbols for a node shape
+ * @param shape The node shape to get symbols for
+ * @returns A tuple of [opening, closing] symbols
+ */
 export const getNodeShapeSymbols = (shape: NodeShape): readonly [string, string] =>
   match(shape)
     .with("rectangle", () => ["[", "]"] as const)
@@ -277,7 +361,23 @@ const parseEdgeFromTokens = (tokens: Array<{ type: string; value: string; positi
   };
 };
 
-// Main optimized parser function
+/**
+ * Parses a Mermaid diagram string into an Abstract Syntax Tree
+ * @param input The Mermaid diagram source code
+ * @returns A Result containing either the parsed AST or an error message
+ * @example
+ * ```typescript
+ * const result = parseMermaid(`
+ *   flowchart TD
+ *     A[Start] --> B{Decision}
+ *     B -->|Yes| C[Process]
+ * `);
+ * 
+ * if (result.success) {
+ *   console.log(result.data.nodes.size); // Number of nodes
+ * }
+ * ```
+ */
 export const parseMermaid = (input: string): Result<MermaidAST> => {
   const lines = input.trim().split('\n');
   if (lines.length === 0) return Err("Empty input");
