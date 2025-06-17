@@ -23,7 +23,7 @@ export {
   getNodeShapeSymbols,
   Ok,
   Err
-} from "./parser.ts";
+} from "./lib/parser.ts";
 
 // Renderer exports
 export {
@@ -42,7 +42,7 @@ export {
   type JsonConfig,
   type MermaidConfig,
   type Renderer
-} from "./renderers.ts";
+} from "./lib/renderers.ts";
 
 // Utility functions for analysis and validation
 export {
@@ -54,4 +54,4 @@ export {
   withPerformanceMonitoring,
   renderForTarget,
   type OutputTarget
-} from "./main.ts";
+} from "./lib/utils.ts";

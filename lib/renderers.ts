@@ -545,7 +545,7 @@ export const render = (ast: MermaidAST, format: RenderFormat): Result<string> =>
     .exhaustive();
 
 // Convenience functions for common render configurations
-export const renderSvg = (ast: MermaidAST, config?: Partial<SvgConfig>) =>
+export const renderSvg = (ast: MermaidAST, config?: Partial<SvgConfig>): Result<string> =>
   render(ast, {
     type: "svg",
     config: {
@@ -557,7 +557,7 @@ export const renderSvg = (ast: MermaidAST, config?: Partial<SvgConfig>) =>
     }
   });
 
-export const renderHtml = (ast: MermaidAST, config?: Partial<HtmlConfig>) =>
+export const renderHtml = (ast: MermaidAST, config?: Partial<HtmlConfig>): Result<string> =>
   render(ast, {
     type: "html",
     config: {
@@ -567,7 +567,7 @@ export const renderHtml = (ast: MermaidAST, config?: Partial<HtmlConfig>) =>
     }
   });
 
-export const renderJson = (ast: MermaidAST, config?: Partial<JsonConfig>) =>
+export const renderJson = (ast: MermaidAST, config?: Partial<JsonConfig>): Result<string> =>
   render(ast, {
     type: "json",
     config: {
@@ -577,7 +577,7 @@ export const renderJson = (ast: MermaidAST, config?: Partial<JsonConfig>) =>
     }
   });
 
-export const renderMermaid = (ast: MermaidAST, config?: Partial<MermaidConfig>) =>
+export const renderMermaid = (ast: MermaidAST, config?: Partial<MermaidConfig>): Result<string> =>
   render(ast, {
     type: "mermaid",
     config: {
