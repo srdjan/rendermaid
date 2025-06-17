@@ -1,6 +1,6 @@
 # RenderMaid
 
-A high-performance, functional TypeScript library for parsing and rendering Mermaid diagrams. Built with modern functional programming principles, featuring optimized parsing, intelligent edge routing, and multi-format output.
+A high-performance, functional TypeScript library for parsing and rendering Mermaid diagrams. Built with Claude, and adhering to modern functional programming principles, featuring optimized parsing, intelligent edge routing, and multi-format output.
 
 [![JSR](https://jsr.io/badges/@rendermaid/core)](https://jsr.io/@rendermaid/core)
 
