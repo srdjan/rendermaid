@@ -1,5 +1,5 @@
-import { match } from "npm:ts-pattern@5.0.5";
-import { parseMermaid, MermaidAST, Result } from "../lib/parser.ts";
+import { match } from "npm:ts-pattern@5.7.1";
+import { parseMermaid, type MermaidAST, type Result } from "../lib/parser.ts";
 import { renderSvg, renderHtml, renderJson, renderMermaid } from "../lib/renderers.ts";
 
 // Example Mermaid diagrams for testing

@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "exports": "./mod.ts",
   "tasks": {
-    "dev": "deno run --watch main.ts",
-    "demo": "deno run --allow-write main.ts",
+    "test": "deno test --allow-write",
+    "e2e": "deno run --allow-write ./tests/e2e.ts",
+    "dev": "deno run --allow-write main.ts",
     "perf": "deno run --allow-write performance.ts",
     "publish": "deno publish"
   },

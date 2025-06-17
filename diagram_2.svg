@@ -1,0 +1,57 @@
+<svg width="1000" height="800" 
+                   viewBox="0 0 1000 800"
+                   xmlns="http://www.w3.org/2000/svg"
+                   style="background-color: white;">
+  <style>
+    .node-rect, .node-circle, .node-rhombus, .node-default { 
+      stroke-width: 2; 
+    }
+    .light, .dark, .neutral { color: #333; }
+    text { font-family: sans-serif; font-size: 12px; fill: #333; }
+    .edge-label { 
+      font-size: 10px; 
+      fill: #333;
+      text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white;
+    }
+  </style>
+  <rect x="460" y="40" width="80" height="40" rx="5" class="node-default dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="60" text-anchor="middle" dominant-baseline="central">user input</text>
+  <polygon points="460,240 500,220 540,240 500,260" class="node-rhombus dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="240" text-anchor="middle" dominant-baseline="central">validate</text>
+  <rect x="400" y="400" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="440" y="420" text-anchor="middle" dominant-baseline="central">process data</text>
+  <rect x="520" y="400" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="560" y="420" text-anchor="middle" dominant-baseline="central">show error</text>
+  <rect x="400" y="580" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="440" y="600" text-anchor="middle" dominant-baseline="central">(database)</text>
+  <rect x="460" y="760" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="780" text-anchor="middle" dominant-baseline="central">generate report</text>
+  <circle cx="500" cy="960" r="30" class="node-circle dark" stroke="currentColor" fill="none"/>
+       <text x="500" y="960" text-anchor="middle" dominant-baseline="central">success</text>
+  <rect x="520" y="580" width="80" height="40" class="node-rect dark" stroke="currentColor" fill="none"/>
+       <text x="560" y="600" text-anchor="middle" dominant-baseline="central">retry</text>
+  <path d="M 500 85 L 500 215" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="500,215 496,208.0717967697245 504,208.0717967697245" fill="currentColor"/>
+          
+  <path d="M 491.6666666666667 265 L 448.3333333333333 395" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="448.3333333333333,395 446.72949037115194,387.16241824587064 454.31895675555603,389.69224037400534" fill="currentColor"/>
+          <text x="448.3333333333333" y="390" text-anchor="middle" font-size="10" fill="currentColor" class="edge-label">Valid</text>
+  <path d="M 508.3333333333333 265 L 551.6666666666666 395" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="551.6666666666666,395 545.6810432444439,389.69224037400534 553.270509628848,387.16241824587064" fill="currentColor"/>
+          <text x="551.6666666666666" y="390" text-anchor="middle" font-size="10" fill="currentColor" class="edge-label">Invalid</text>
+  <path d="M 440 445 L 440 575" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="440,575 436,568.0717967697245 444,568.0717967697245" fill="currentColor"/>
+          
+  <path d="M 448.3333333333333 625 L 491.6666666666667 755" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="491.6666666666667,755 485.68104324444397,749.6922403740053 493.27050962884806,747.1624182458706" fill="currentColor"/>
+          
+  <path d="M 500 805 L 500 935" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="500,935 496,928.0717967697245 504,928.0717967697245" fill="currentColor"/>
+          
+  <path d="M 560 445 L 560 575" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="560,575 556,568.0717967697245 564,568.0717967697245" fill="currentColor"/>
+          
+  <path d="M 557.2222222222222 575 L 660 438 L 660 222 L 502.77777777777777 85" stroke="currentColor" stroke-width="1" stroke-dasharray="none" fill="none"/>
+          <polygon points="502.77777777777777,85 510.62897322319947,86.53581576948208 505.3733200285844,92.5672425905529" fill="currentColor"/>
+          
+</svg>
