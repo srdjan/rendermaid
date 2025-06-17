@@ -4,6 +4,7 @@
   "exports": "./mod.ts",
   "tasks": {
     "test": "deno test --allow-write",
+    "test-watch": "deno test --allow-write --watch",
     "e2e": "deno run --allow-write ./tests/e2e.ts",
     "dev": "deno run --allow-write main.ts",
     "perf": "deno run --allow-write performance.ts",

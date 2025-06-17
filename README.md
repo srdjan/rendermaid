@@ -300,6 +300,34 @@ deno task perf
 deno task dev
 ```
 
+### Testing
+
+RenderMaid includes comprehensive unit tests covering all modules:
+
+```bash
+# Run all tests
+deno task test
+
+# Run tests with file watching
+deno task test-watch
+
+# Run end-to-end tests
+deno task e2e
+```
+
+**Test Coverage:**
+- **49 unit tests** across parser, renderers, utilities, and integration
+- **Parser tests**: Node/edge creation, AST operations, error handling
+- **Renderer tests**: SVG, HTML, JSON, Mermaid output with various configurations  
+- **Utility tests**: AST analysis, validation, transformation, performance monitoring
+- **Integration tests**: End-to-end workflows, round-trip testing, performance validation
+
+Test files are located in the `tests/` directory:
+- `tests/parser.test.ts` - Parser functionality tests
+- `tests/renderers.test.ts` - Rendering engine tests
+- `tests/utils.test.ts` - Utility function tests
+- `tests/integration.test.ts` - Integration and workflow tests
+
 ## 🤝 Contributing
 
 1. Fork the repository
