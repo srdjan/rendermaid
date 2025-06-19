@@ -1,4 +1,4 @@
-import { match } from "npm:ts-pattern@5.7.1";
+import { match } from "ts-pattern";
 import { parseMermaid, type MermaidAST, type Result } from "../lib/parser.ts";
 import { renderSvg, renderHtml, renderJson, renderMermaid } from "../lib/renderers.ts";
 
@@ -22,6 +22,17 @@ flowchart LR
   F --> G((Success))
   D --> H[Retry]
   H --> A
+`;
+
+const zkProofFlowchart = `
+flowchart TD
+    TS[Trusted Setup] --> P[Prover]
+    TS --> V[Verifier]
+    P --> P2[Generate ZK proof using secret + public parameters]
+    P2 --> V2[Send proof]
+    V2 --> V3{Verify proof using public parameters}
+    V3 -->|Proof is valid| A1[✅ Accept]
+    V3 -->|Proof is invalid| A2[❌ Reject]
 `;
 
 // Functional pipeline for processing multiple diagrams
@@ -140,12 +151,50 @@ const enhanceAST = compose(
   normalizeLabelsTransformer
 );
 
+// Specialized test for zero-knowledge proof diagram
+const testZKProofDiagram = () => {
+  console.log("🔐 Zero-Knowledge Proof Diagram Test");
+  console.log("─".repeat(50));
+
+  const parseResult = parseMermaid(zkProofFlowchart);
+
+  if (!parseResult.success) {
+    console.log(`❌ ZK Proof Parse Error: ${parseResult.error}`);
+    return false;
+  }
+
+  const ast = parseResult.data;
+  const analysis = analyzeAST(ast);
+
+  // Verify specific characteristics of ZK proof diagram
+  const expectedNodes = ["TS", "P", "V", "P2", "V2", "V3", "A1", "A2"];
+  const actualNodes = Array.from(ast.nodes.keys());
+
+  const hasAllNodes = expectedNodes.every(nodeId => actualNodes.includes(nodeId));
+  const hasDecisionNode = Array.from(ast.nodes.values()).some(node => node.shape === "rhombus");
+  const hasConditionalEdges = ast.edges.some(edge => edge.label?.includes("valid"));
+
+  console.log("✅ ZK Proof Diagram Analysis:");
+  console.log(`  - Nodes: ${analysis.nodeCount} (expected: ${expectedNodes.length})`);
+  console.log(`  - Edges: ${analysis.edgeCount}`);
+  console.log(`  - Has all expected nodes: ${hasAllNodes}`);
+  console.log(`  - Has decision node: ${hasDecisionNode}`);
+  console.log(`  - Has conditional edges: ${hasConditionalEdges}`);
+  console.log(`  - Complexity score: ${analysis.complexity}`);
+
+  return hasAllNodes && hasDecisionNode && hasConditionalEdges;
+};
+
 // Demo execution function
 const runDemo = () => {
   console.log("🎯 Mermaid Parser Demo - Functional TypeScript Architecture\n");
 
-  // Parse both example diagrams
-  const examples = [flowchartExample, complexFlowchart];
+  // Test ZK proof diagram specifically
+  const zkTestPassed = testZKProofDiagram();
+  console.log(`\n🔐 ZK Proof Test: ${zkTestPassed ? "✅ PASSED" : "❌ FAILED"}\n`);
+
+  // Parse all example diagrams
+  const examples = [flowchartExample, complexFlowchart, zkProofFlowchart];
 
   examples.forEach((example, index) => {
     console.log(`📊 Diagram ${index + 1}:`);
@@ -223,6 +272,7 @@ const runDemo = () => {
 // Export for use in other modules
 export {
   runDemo,
+  testZKProofDiagram,
   processDiagram,
   renderWithMultipleFormats,
   analyzeAST,

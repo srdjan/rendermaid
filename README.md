@@ -2,6 +2,8 @@
 
 A high-performance, functional TypeScript library for parsing and rendering Mermaid diagrams. Built with Claude, and adhering to modern functional programming principles, featuring optimized parsing, intelligent edge routing, and multi-format output.
 
+**Supports both programmatic diagram creation and parsing diagrams from markdown files.**
+
 [![JSR](https://jsr.io/badges/@rendermaid/core)](https://jsr.io/@rendermaid/core)
 
 ## ✨ Features
@@ -9,7 +11,8 @@ A high-performance, functional TypeScript library for parsing and rendering Merm
 - **🚀 High Performance**: Optimized tokenization-based parser with spatial grid rendering
 - **🎯 Functional Architecture**: Immutable data structures and pure functions throughout
 - **📊 Multi-format Output**: SVG, HTML, JSON, and round-trip Mermaid rendering
-- **🔄 Smart Edge Routing**: Intelligent collision avoidance for clean diagrams  
+- **📝 Markdown Integration**: Parse diagrams directly from markdown files and content
+- **🔄 Smart Edge Routing**: Intelligent collision avoidance for clean diagrams
 - **📱 Professional Styling**: White backgrounds with proper contrast and typography
 - **⚡ Type-Safe**: Full TypeScript support with discriminated unions and pattern matching
 - **🧪 Comprehensive Testing**: Performance benchmarks and validation included
@@ -57,6 +60,93 @@ if (parseResult.success) {
 }
 ```
 
+### Parsing from Markdown Files
+
+RenderMaid can extract and parse Mermaid diagrams directly from markdown files:
+
+```typescript
+import { parseMermaidFromMarkdownFile } from "@rendermaid/core";
+
+// Parse all diagrams from a markdown file
+const result = await parseMermaidFromMarkdownFile("documentation.md");
+
+if (result.success) {
+  console.log(`Found ${result.data.length} diagrams`);
+
+  // Process each diagram
+  result.data.forEach((ast, index) => {
+    console.log(`Diagram ${index + 1}:`);
+    console.log(`  Nodes: ${ast.nodes.size}`);
+    console.log(`  Edges: ${ast.edges.length}`);
+
+    // Render each diagram
+    const svgResult = renderSvg(ast, { theme: "light" });
+    if (svgResult.success) {
+      // Save or process the SVG
+      console.log(`  SVG generated: ${svgResult.data.length} chars`);
+    }
+  });
+}
+```
+
+**Example markdown file:**
+
+````markdown
+# System Documentation
+
+## Authentication Flow
+
+```mermaid
+flowchart TD
+    A[User Login] --> B{Valid Credentials?}
+    B -->|Yes| C[Generate JWT]
+    B -->|No| D[Show Error]
+    C --> E[Redirect to Dashboard]
+    D --> A
+```
+
+## Database Schema
+
+```mermaid
+flowchart LR
+    U[Users] --> P[Posts]
+    U --> C[Comments]
+    P --> C
+```
+````
+
+### Extract Diagrams from Markdown Content
+
+You can also extract diagrams from markdown content directly:
+
+```typescript
+import { extractMermaidFromMarkdown } from "@rendermaid/core";
+
+const markdownContent = `
+# Documentation
+
+```mermaid
+flowchart TD
+    A --> B --> C
+```
+
+More content here...
+`;
+
+const diagrams = extractMermaidFromMarkdown(markdownContent);
+console.log(`Found ${diagrams.length} diagram(s)`);
+
+// Parse each extracted diagram
+diagrams.forEach(diagramCode => {
+  const parseResult = parseMermaid(diagramCode);
+  if (parseResult.success) {
+    // Process the AST
+    console.log("Parsed successfully!");
+  }
+});
+
+```
+
 ## 📚 API Reference
 
 ### Core Functions
@@ -74,9 +164,41 @@ flowchart LR
 `);
 ```
 
+#### `parseMermaidFromMarkdownFile(filePath: string): Promise<Result<MermaidAST[]>>`
+
+Parses all Mermaid diagrams from a markdown file.
+
+```typescript
+const result = await parseMermaidFromMarkdownFile("docs/architecture.md");
+
+if (result.success) {
+  result.data.forEach((ast, index) => {
+    console.log(`Diagram ${index + 1}: ${ast.nodes.size} nodes`);
+  });
+}
+```
+
+#### `extractMermaidFromMarkdown(content: string): string[]`
+
+Extracts Mermaid diagram code blocks from markdown content.
+
+```typescript
+const markdownContent = `
+# Documentation
+\`\`\`mermaid
+flowchart TD
+    A --> B
+\`\`\`
+`;
+
+const diagrams = extractMermaidFromMarkdown(markdownContent);
+// Returns: ["flowchart TD\n    A --> B"]
+```
+
 #### Rendering Functions
 
 **SVG Rendering**
+
 ```typescript
 renderSvg(ast: MermaidAST, config?: Partial<SvgConfig>): Result<string>
 
@@ -90,6 +212,7 @@ const svg = renderSvg(ast, {
 ```
 
 **HTML Rendering**
+
 ```typescript
 renderHtml(ast: MermaidAST, config?: Partial<HtmlConfig>): Result<string>
 
@@ -102,6 +225,7 @@ const html = renderHtml(ast, {
 ```
 
 **JSON Export**
+
 ```typescript
 renderJson(ast: MermaidAST, config?: Partial<JsonConfig>): Result<string>
 
@@ -113,6 +237,7 @@ const json = renderJson(ast, {
 ```
 
 **Round-trip Mermaid**
+
 ```typescript
 renderMermaid(ast: MermaidAST, config?: Partial<MermaidConfig>): Result<string>
 
@@ -298,7 +423,15 @@ deno task perf
 
 # Development with file watching
 deno task dev
+
+# Test markdown parsing with example file
+deno task markdown
 ```
+
+### Example Files
+
+- `examples/markdown-examples.md` - Comprehensive markdown file with 4 different diagram types
+- `examples/advanced.ts` - Advanced usage examples including markdown parsing
 
 ### Testing
 
@@ -313,19 +446,26 @@ deno task test-watch
 
 # Run end-to-end tests
 deno task e2e
+
+# Run markdown parsing demo
+deno task markdown
 ```
 
 **Test Coverage:**
-- **49 unit tests** across parser, renderers, utilities, and integration
+
+- **59 unit tests** across parser, renderers, utilities, markdown parsing, and integration
 - **Parser tests**: Node/edge creation, AST operations, error handling
-- **Renderer tests**: SVG, HTML, JSON, Mermaid output with various configurations  
+- **Renderer tests**: SVG, HTML, JSON, Mermaid output with various configurations
+- **Markdown tests**: File parsing, content extraction, mixed valid/invalid diagrams
 - **Utility tests**: AST analysis, validation, transformation, performance monitoring
 - **Integration tests**: End-to-end workflows, round-trip testing, performance validation
 
 Test files are located in the `tests/` directory:
+
 - `tests/parser.test.ts` - Parser functionality tests
 - `tests/renderers.test.ts` - Rendering engine tests
 - `tests/utils.test.ts` - Utility function tests
+- `tests/markdown.test.ts` - Markdown parsing tests
 - `tests/integration.test.ts` - Integration and workflow tests
 
 ## 🤝 Contributing

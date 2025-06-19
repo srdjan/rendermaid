@@ -41,12 +41,13 @@
   },
   // Development tasks
   "tasks": {
-    "test": "deno test --allow-write",
-    "test-watch": "deno test --allow-write --watch",
+    "test": "deno test --allow-write --allow-read",
+    "test-watch": "deno test --allow-write --allow-read --watch",
     "e2e": "deno run --allow-write ./tests/e2e.ts",
     "dev": "deno run --allow-write main.ts",
     "demo": "deno run --allow-write main.ts",
     "perf": "deno run --allow-write performance.ts",
+    "markdown": "deno run --allow-write --allow-read examples/advanced.ts",
     "publish": "deno publish",
     "fmt": "deno fmt",
     "lint": "deno lint",

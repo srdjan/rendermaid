@@ -150,3 +150,18 @@ export {
   /** Output target type */
   type OutputTarget
 } from "./lib/utils.ts";
+
+/**
+ * Markdown parsing functions
+ * @namespace Markdown
+ */
+export {
+  /** Extract Mermaid diagrams from markdown content */
+  extractMermaidFromMarkdown,
+  /** Parse all Mermaid diagrams from a markdown file */
+  parseMermaidFromMarkdownFile,
+  /** Create sample markdown files for testing */
+  createSampleMarkdownFiles,
+  /** Run markdown parsing demo */
+  runMarkdownDemo
+} from "./examples/advanced.ts";
