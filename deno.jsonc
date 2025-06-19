@@ -4,7 +4,6 @@
   "version": "0.0.1",
   "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance and multi-format output",
   "license": "MIT",
-  
   // Repository information
   "repository": {
     "type": "git",
@@ -14,11 +13,10 @@
     "url": "https://github.com/rendermaid/core/issues"
   },
   "homepage": "https://github.com/rendermaid/core",
-  
   // Package metadata for discovery
   "keywords": [
     "mermaid",
-    "diagrams", 
+    "diagrams",
     "flowchart",
     "parser",
     "renderer",
@@ -33,21 +31,18 @@
     "deno",
     "jsr"
   ],
-  
   "author": {
     "name": "RenderMaid Team",
     "email": "team@rendermaid.dev"
   },
-  
   // Module exports
   "exports": {
     ".": "./mod.ts"
   },
-  
   // Development tasks
   "tasks": {
     "test": "deno test --allow-write",
-    "test-watch": "deno test --allow-write --watch", 
+    "test-watch": "deno test --allow-write --watch",
     "e2e": "deno run --allow-write ./tests/e2e.ts",
     "dev": "deno run --allow-write main.ts",
     "demo": "deno run --allow-write main.ts",
@@ -57,12 +52,11 @@
     "lint": "deno lint",
     "check": "deno check mod.ts"
   },
-  
   // Dependencies
   "imports": {
-    "@std/assert": "jsr:@std/assert@1"
+    "@std/assert": "jsr:@std/assert@^1.0.13",
+    "ts-pattern": "npm:ts-pattern@^5.7.1"
   },
-  
   // TypeScript configuration
   "compilerOptions": {
     "strict": true,
@@ -75,7 +69,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true
   },
-  
   // Code formatting
   "fmt": {
     "useTabs": false,
@@ -84,23 +77,52 @@
     "semiColons": true,
     "singleQuote": false,
     "proseWrap": "preserve",
-    "include": ["src/", "tests/", "examples/", "*.ts", "*.tsx", "*.js", "*.jsx"],
-    "exclude": ["node_modules/", "dist/", "build/"]
+    "include": [
+      "src/",
+      "tests/",
+      "examples/",
+      "*.ts",
+      "*.tsx",
+      "*.js",
+      "*.jsx"
+    ],
+    "exclude": [
+      "node_modules/",
+      "dist/",
+      "build/"
+    ]
   },
-  
   // Linting configuration
   "lint": {
     "rules": {
-      "tags": ["recommended"],
-      "include": ["ban-untagged-todo"]
+      "tags": [
+        "recommended"
+      ],
+      "include": [
+        "ban-untagged-todo"
+      ]
     },
-    "include": ["src/", "tests/", "examples/", "*.ts", "*.tsx"],
-    "exclude": ["node_modules/", "dist/", "build/"]
+    "include": [
+      "src/",
+      "tests/",
+      "examples/",
+      "*.ts",
+      "*.tsx"
+    ],
+    "exclude": [
+      "node_modules/",
+      "dist/",
+      "build/"
+    ]
   },
-  
   // Test configuration
   "test": {
-    "include": ["tests/"],
-    "exclude": ["node_modules/", "dist/"]
+    "include": [
+      "tests/"
+    ],
+    "exclude": [
+      "node_modules/",
+      "dist/"
+    ]
   }
 }

@@ -39,7 +39,8 @@
     "publish": "deno publish"
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@1"
+    "@std/assert": "jsr:@std/assert@^1.0.13",
+    "ts-pattern": "npm:ts-pattern@^5.7.1"
   },
   "compilerOptions": {
     "strict": true,
