@@ -1,6 +1,6 @@
 {
   "name": "@rendermaid/core",
-  "version": "0.0.3",
+  "version": "0.4.0",
   "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance, multi-format output, and comprehensive type safety",
   "license": "MIT",
   "repository": {
