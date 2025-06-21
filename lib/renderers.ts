@@ -218,73 +218,199 @@ class SpatialGrid {
   }
 }
 
-// Optimized connection point calculation
-const getOptimizedConnectionPoint = (fromPos: Position, toPos: Position, isStart: boolean): Position => {
+// Node shape dimensions for accurate connection points
+const getNodeDimensions = (shape: string): { width: number; height: number; radius?: number } => {
+  switch (shape) {
+    case "circle":
+      return { width: 60, height: 60, radius: 30 };
+    case "rhombus":
+      return { width: 80, height: 40 };
+    case "stadium":
+      return { width: 100, height: 40 };
+    case "hexagon":
+      return { width: 90, height: 40 };
+    default: // rectangle and others
+      return { width: 80, height: 40 };
+  }
+};
+
+// Improved connection point calculation with shape-aware boundaries
+const getAccurateConnectionPoint = (
+  fromPos: Position,
+  toPos: Position,
+  isStart: boolean,
+  nodeShape: string
+): Position => {
   const dx = toPos.x - fromPos.x;
   const dy = toPos.y - fromPos.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
 
   if (distance === 0) return fromPos;
 
-  const nodeWidth = 80;
-  const nodeHeight = 40;
-  const padding = 5;
-
-  const unitX = dx / distance;
-  const unitY = dy / distance;
+  const dimensions = getNodeDimensions(nodeShape);
   const basePos = isStart ? fromPos : toPos;
   const direction = isStart ? 1 : -1;
 
-  // Fast edge calculation
-  const absUnitX = Math.abs(unitX);
-  const absUnitY = Math.abs(unitY);
+  // Unit vector from center to target
+  const unitX = dx / distance;
+  const unitY = dy / distance;
 
-  let offsetX: number, offsetY: number;
+  // Shape-specific boundary calculation
+  if (nodeShape === "circle") {
+    // For circles, use radius-based calculation
+    const radius = dimensions.radius! + 2; // Small padding
+    return {
+      x: basePos.x + direction * unitX * radius,
+      y: basePos.y + direction * unitY * radius
+    };
+  } else if (nodeShape === "rhombus") {
+    // For rhombus, calculate intersection with diamond edges
+    const halfWidth = dimensions.width / 2;
+    const halfHeight = dimensions.height / 2;
 
-  if (absUnitX > absUnitY) {
-    offsetX = direction * Math.sign(unitX) * (nodeWidth / 2 + padding);
-    offsetY = direction * unitY * (nodeWidth / 2 + padding) / absUnitX;
+    // Find intersection with diamond boundary
+    const absUnitX = Math.abs(unitX);
+    const absUnitY = Math.abs(unitY);
+
+    // Diamond boundary equation: |x|/halfWidth + |y|/halfHeight = 1
+    const scale = 1 / (absUnitX / halfWidth + absUnitY / halfHeight);
+    const padding = 3;
+
+    return {
+      x: basePos.x + direction * unitX * (scale + padding),
+      y: basePos.y + direction * unitY * (scale + padding)
+    };
   } else {
-    offsetY = direction * Math.sign(unitY) * (nodeHeight / 2 + padding);
-    offsetX = direction * unitX * (nodeHeight / 2 + padding) / absUnitY;
+    // For rectangles and other shapes, use edge intersection
+    const halfWidth = dimensions.width / 2;
+    const halfHeight = dimensions.height / 2;
+    const padding = 2;
+
+    const absUnitX = Math.abs(unitX);
+    const absUnitY = Math.abs(unitY);
+
+    let offsetX: number, offsetY: number;
+
+    if (absUnitX * halfHeight > absUnitY * halfWidth) {
+      // Hit vertical edge
+      offsetX = direction * Math.sign(unitX) * (halfWidth + padding);
+      offsetY = direction * unitY * (halfWidth + padding) / absUnitX;
+    } else {
+      // Hit horizontal edge
+      offsetY = direction * Math.sign(unitY) * (halfHeight + padding);
+      offsetX = direction * unitX * (halfHeight + padding) / absUnitY;
+    }
+
+    return {
+      x: basePos.x + offsetX,
+      y: basePos.y + offsetY
+    };
+  }
+};
+
+// Improved line-node intersection with shape awareness
+const lineIntersectsNode = (
+  lineStart: Position,
+  lineEnd: Position,
+  nodePos: Position,
+  nodeShape: string
+): boolean => {
+  const dimensions = getNodeDimensions(nodeShape);
+  const padding = 15; // Increased padding for better clearance
+
+  if (nodeShape === "circle") {
+    // Circle intersection using distance to line
+    const radius = dimensions.radius! + padding;
+    const distanceToLine = distanceFromPointToLine(nodePos, lineStart, lineEnd);
+    return distanceToLine < radius;
+  } else {
+    // Rectangle-based intersection for other shapes
+    const halfWidth = dimensions.width / 2 + padding;
+    const halfHeight = dimensions.height / 2 + padding;
+
+    const nodeLeft = nodePos.x - halfWidth;
+    const nodeRight = nodePos.x + halfWidth;
+    const nodeTop = nodePos.y - halfHeight;
+    const nodeBottom = nodePos.y + halfHeight;
+
+    // Check if line segment intersects with expanded node bounds
+    return lineSegmentIntersectsRect(lineStart, lineEnd, {
+      left: nodeLeft,
+      right: nodeRight,
+      top: nodeTop,
+      bottom: nodeBottom
+    });
+  }
+};
+
+// Helper function to calculate distance from point to line segment
+const distanceFromPointToLine = (point: Position, lineStart: Position, lineEnd: Position): number => {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  if (length === 0) return Math.sqrt((point.x - lineStart.x) ** 2 + (point.y - lineStart.y) ** 2);
+
+  const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (length * length)));
+  const projection = {
+    x: lineStart.x + t * dx,
+    y: lineStart.y + t * dy
+  };
+
+  return Math.sqrt((point.x - projection.x) ** 2 + (point.y - projection.y) ** 2);
+};
+
+// Helper function for line-rectangle intersection
+const lineSegmentIntersectsRect = (
+  lineStart: Position,
+  lineEnd: Position,
+  rect: { left: number; right: number; top: number; bottom: number }
+): boolean => {
+  // Check if either endpoint is inside the rectangle
+  if ((lineStart.x >= rect.left && lineStart.x <= rect.right &&
+    lineStart.y >= rect.top && lineStart.y <= rect.bottom) ||
+    (lineEnd.x >= rect.left && lineEnd.x <= rect.right &&
+      lineEnd.y >= rect.top && lineEnd.y <= rect.bottom)) {
+    return true;
   }
 
-  return {
-    x: basePos.x + offsetX,
-    y: basePos.y + offsetY
-  };
+  // Check intersection with each edge of the rectangle
+  return (
+    lineIntersectsLine(lineStart, lineEnd, { x: rect.left, y: rect.top }, { x: rect.right, y: rect.top }) ||
+    lineIntersectsLine(lineStart, lineEnd, { x: rect.right, y: rect.top }, { x: rect.right, y: rect.bottom }) ||
+    lineIntersectsLine(lineStart, lineEnd, { x: rect.right, y: rect.bottom }, { x: rect.left, y: rect.bottom }) ||
+    lineIntersectsLine(lineStart, lineEnd, { x: rect.left, y: rect.bottom }, { x: rect.left, y: rect.top })
+  );
 };
 
-// Fast line-rectangle intersection (optimized)
-const fastLineIntersectsNode = (lineStart: Position, lineEnd: Position, nodePos: Position): boolean => {
-  const nodeWidth = 80;
-  const nodeHeight = 40;
-  const padding = 10;
+// Helper function for line-line intersection
+const lineIntersectsLine = (
+  p1: Position, p2: Position,
+  p3: Position, p4: Position
+): boolean => {
+  const denom = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+  if (Math.abs(denom) < 1e-10) return false;
 
-  const nodeLeft = nodePos.x - nodeWidth / 2 - padding;
-  const nodeRight = nodePos.x + nodeWidth / 2 + padding;
-  const nodeTop = nodePos.y - nodeHeight / 2 - padding;
-  const nodeBottom = nodePos.y + nodeHeight / 2 + padding;
+  const t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denom;
+  const u = -((p1.x - p2.x) * (p1.y - p3.y) - (p1.y - p2.y) * (p1.x - p3.x)) / denom;
 
-  // Quick bounding box check
-  const minX = Math.min(lineStart.x, lineEnd.x);
-  const maxX = Math.max(lineStart.x, lineEnd.x);
-  const minY = Math.min(lineStart.y, lineEnd.y);
-  const maxY = Math.max(lineStart.y, lineEnd.y);
-
-  return !(maxX < nodeLeft || minX > nodeRight || maxY < nodeTop || minY > nodeBottom);
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 };
 
-// Fast collision detection using spatial grid
-const optimizedRouteEdgePath = (
+// Improved edge routing with shape-aware collision detection
+const improvedRouteEdgePath = (
   fromPos: Position,
   toPos: Position,
   edge: MermaidEdge,
   layout: Layout,
-  spatialGrid: SpatialGrid
+  spatialGrid: SpatialGrid,
+  nodeShapes: Map<string, string>
 ): Position[] => {
-  const startPoint = getOptimizedConnectionPoint(fromPos, toPos, true);
-  const endPoint = getOptimizedConnectionPoint(fromPos, toPos, false);
+  const fromShape = nodeShapes.get(edge.from) || "rectangle";
+  const toShape = nodeShapes.get(edge.to) || "rectangle";
+
+  const startPoint = getAccurateConnectionPoint(fromPos, toPos, true, fromShape);
+  const endPoint = getAccurateConnectionPoint(fromPos, toPos, false, toShape);
 
   // Use spatial grid for faster collision detection
   const midPoint = {
@@ -294,15 +420,19 @@ const optimizedRouteEdgePath = (
 
   const nearbyNodes = spatialGrid.getNearbyNodes(midPoint);
 
-  // Quick check if path is clear
+  // Check for collisions with shape awareness
   let hasCollision = false;
+  const collidingNodes: string[] = [];
+
   for (const nodeId of nearbyNodes) {
     if (nodeId === edge.from || nodeId === edge.to) continue;
 
     const nodePos = layout.get(nodeId);
-    if (nodePos && fastLineIntersectsNode(startPoint, endPoint, nodePos)) {
+    const nodeShape = nodeShapes.get(nodeId) || "rectangle";
+
+    if (nodePos && lineIntersectsNode(startPoint, endPoint, nodePos, nodeShape)) {
       hasCollision = true;
-      break;
+      collidingNodes.push(nodeId);
     }
   }
 
@@ -310,22 +440,62 @@ const optimizedRouteEdgePath = (
     return [startPoint, endPoint];
   }
 
-  // Simple routing strategy - route above/below for horizontal, left/right for vertical
+  // Improved routing strategy with better waypoint calculation
   const dx = toPos.x - fromPos.x;
   const dy = toPos.y - fromPos.y;
 
+  // Calculate clearance needed based on colliding nodes
+  let maxClearance = 80; // Base clearance
+  for (const nodeId of collidingNodes) {
+    const nodePos = layout.get(nodeId);
+    const nodeShape = nodeShapes.get(nodeId) || "rectangle";
+    if (nodePos) {
+      const dimensions = getNodeDimensions(nodeShape);
+      const nodeClearance = Math.max(dimensions.width, dimensions.height) / 2 + 30;
+      maxClearance = Math.max(maxClearance, nodeClearance);
+    }
+  }
+
   if (Math.abs(dx) > Math.abs(dy)) {
-    // Horizontal - route above or below
-    const routeY = fromPos.y + (dy > 0 ? -60 : 60);
-    const waypoint1 = { x: fromPos.x + dx * 0.3, y: routeY };
-    const waypoint2 = { x: toPos.x - dx * 0.3, y: routeY };
-    return [startPoint, waypoint1, waypoint2, endPoint];
+    // Horizontal flow - route above or below
+    const routeDirection = dy >= 0 ? -1 : 1; // Route opposite to natural direction
+    const routeY = fromPos.y + routeDirection * maxClearance;
+
+    // Create smooth waypoints
+    const waypoint1 = {
+      x: fromPos.x + dx * 0.25,
+      y: fromPos.y + routeDirection * maxClearance * 0.5
+    };
+    const waypoint2 = {
+      x: fromPos.x + dx * 0.75,
+      y: routeY
+    };
+    const waypoint3 = {
+      x: toPos.x - dx * 0.25,
+      y: toPos.y + routeDirection * maxClearance * 0.5
+    };
+
+    return [startPoint, waypoint1, waypoint2, waypoint3, endPoint];
   } else {
-    // Vertical - route left or right
-    const routeX = fromPos.x + (dx > 0 ? -100 : 100);
-    const waypoint1 = { x: routeX, y: fromPos.y + dy * 0.3 };
-    const waypoint2 = { x: routeX, y: toPos.y - dy * 0.3 };
-    return [startPoint, waypoint1, waypoint2, endPoint];
+    // Vertical flow - route left or right
+    const routeDirection = dx >= 0 ? -1 : 1; // Route opposite to natural direction
+    const routeX = fromPos.x + routeDirection * maxClearance;
+
+    // Create smooth waypoints
+    const waypoint1 = {
+      x: fromPos.x + routeDirection * maxClearance * 0.5,
+      y: fromPos.y + dy * 0.25
+    };
+    const waypoint2 = {
+      x: routeX,
+      y: fromPos.y + dy * 0.75
+    };
+    const waypoint3 = {
+      x: toPos.x + routeDirection * maxClearance * 0.5,
+      y: toPos.y - dy * 0.25
+    };
+
+    return [startPoint, waypoint1, waypoint2, waypoint3, endPoint];
   }
 };
 
@@ -352,8 +522,8 @@ const renderOptimizedSvgNode = (node: MermaidNode, position: Position, theme: st
     );
 };
 
-// Optimized edge rendering
-const renderOptimizedSvgEdge = (edge: MermaidEdge, pathPoints: Position[]): string => {
+// Improved edge rendering with better label positioning
+const renderImprovedSvgEdge = (edge: MermaidEdge, pathPoints: Position[]): string => {
   const pathData = pathPoints.map((point, index) =>
     `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
   ).join(' ');
@@ -378,10 +548,44 @@ const renderOptimizedSvgEdge = (edge: MermaidEdge, pathPoints: Position[]): stri
 
   const strokeWidth = edge.type === "thick" ? "3" : "1";
 
-  const midIndex = Math.floor(pathPoints.length / 2);
-  const labelPos = pathPoints[midIndex];
-  const edgeLabelElement = edge.label ?
-    `<text x="${labelPos.x}" y="${labelPos.y - 5}" text-anchor="middle" font-size="10" fill="currentColor" class="edge-label">${edge.label}</text>` : "";
+  // Improved label positioning with background
+  let edgeLabelElement = "";
+  if (edge.label) {
+    const midIndex = Math.floor(pathPoints.length / 2);
+    const labelPos = pathPoints[midIndex];
+
+    // Calculate label offset from line
+    let offsetX = 0;
+    let offsetY = -12; // Default offset above the line
+
+    // For multi-segment paths, use the direction of the middle segment
+    if (pathPoints.length > 2) {
+      const prevPoint = pathPoints[midIndex - 1] || pathPoints[0];
+      const nextPoint = pathPoints[midIndex + 1] || pathPoints[pathPoints.length - 1];
+
+      const segmentDx = nextPoint.x - prevPoint.x;
+      const segmentDy = nextPoint.y - prevPoint.y;
+      const segmentAngle = Math.atan2(segmentDy, segmentDx);
+
+      // Offset perpendicular to the line direction
+      offsetX = -Math.sin(segmentAngle) * 12;
+      offsetY = Math.cos(segmentAngle) * 12;
+    }
+
+    const labelX = labelPos.x + offsetX;
+    const labelY = labelPos.y + offsetY;
+
+    // Estimate text width for background rectangle
+    const textWidth = edge.label.length * 6 + 8; // Rough estimation
+    const textHeight = 14;
+
+    edgeLabelElement = `
+      <rect x="${labelX - textWidth / 2}" y="${labelY - textHeight / 2}"
+            width="${textWidth}" height="${textHeight}"
+            fill="white" stroke="none" rx="2" opacity="0.9"/>
+      <text x="${labelX}" y="${labelY + 1}" text-anchor="middle"
+            font-size="10" fill="#333" class="edge-label">${edge.label}</text>`;
+  }
 
   return `<path d="${pathData}" stroke="currentColor" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDasharray}" fill="none"/>
           ${edge.type === "arrow" ? `<polygon points="${last.x},${last.y} ${arrowX1},${arrowY1} ${arrowX2},${arrowY2}" fill="currentColor"/>` : ""}
@@ -404,6 +608,12 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
     spatialGrid.addNode(nodeId, pos);
   });
 
+  // Create node shape mapping for accurate connection points
+  const nodeShapes = new Map<string, string>();
+  nodes.forEach(node => {
+    nodeShapes.set(node.id, node.shape);
+  });
+
   // Pre-allocate arrays for better performance
   const nodeElements: string[] = new Array(nodes.length);
   const edgeElements: string[] = new Array(ast.edges.length);
@@ -417,15 +627,15 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
     }
   }
 
-  // Batch render edges
+  // Batch render edges with improved routing and labeling
   for (let i = 0; i < ast.edges.length; i++) {
     const edge = ast.edges[i];
     const fromPos = layout.get(edge.from);
     const toPos = layout.get(edge.to);
 
     if (fromPos && toPos) {
-      const pathPoints = optimizedRouteEdgePath(fromPos, toPos, edge, layout, spatialGrid);
-      edgeElements[i] = renderOptimizedSvgEdge(edge, pathPoints);
+      const pathPoints = improvedRouteEdgePath(fromPos, toPos, edge, layout, spatialGrid, nodeShapes);
+      edgeElements[i] = renderImprovedSvgEdge(edge, pathPoints);
     }
   }
 

@@ -3,17 +3,15 @@
  */
 
 import { assertEquals, assertExists, assert } from "@std/assert";
-import { 
-  parseMermaid, 
-  createNode, 
-  createEdge, 
+import {
+  parseMermaid,
+  createNode,
+  createEdge,
   createAST,
   addNode,
   addEdge,
   Ok,
-  Err,
-  type MermaidNode,
-  type MermaidEdge
+  Err
 } from "../lib/parser.ts";
 
 Deno.test("Parser - Basic flowchart parsing", () => {
@@ -26,17 +24,19 @@ flowchart TD
 
   const result = parseMermaid(input);
   assert(result.success, "Should parse successfully");
-  
+
   const ast = result.data;
   assertEquals(ast.diagramType.type, "flowchart");
-  assertEquals((ast.diagramType as any).direction, "TD");
+  if (ast.diagramType.type === "flowchart") {
+    assertEquals(ast.diagramType.direction, "TD");
+  }
   assertEquals(ast.nodes.size, 4);
   assertEquals(ast.edges.length, 3);
 });
 
 Deno.test("Parser - Node creation", () => {
   const node = createNode("A", "Start", "rectangle");
-  
+
   assertEquals(node.id, "A");
   assertEquals(node.label, "Start");
   assertEquals(node.shape, "rectangle");
@@ -46,7 +46,7 @@ Deno.test("Parser - Node creation", () => {
 
 Deno.test("Parser - Edge creation", () => {
   const edge = createEdge("A", "B", "arrow", "Yes");
-  
+
   assertEquals(edge.from, "A");
   assertEquals(edge.to, "B");
   assertEquals(edge.type, "arrow");
@@ -55,9 +55,11 @@ Deno.test("Parser - Edge creation", () => {
 
 Deno.test("Parser - AST creation", () => {
   const ast = createAST({ type: "flowchart", direction: "LR" });
-  
+
   assertEquals(ast.diagramType.type, "flowchart");
-  assertEquals((ast.diagramType as any).direction, "LR");
+  if (ast.diagramType.type === "flowchart") {
+    assertEquals(ast.diagramType.direction, "LR");
+  }
   assertEquals(ast.nodes.size, 0);
   assertEquals(ast.edges.length, 0);
   assertExists(ast.metadata);
@@ -67,7 +69,7 @@ Deno.test("Parser - Add node to AST", () => {
   const ast = createAST({ type: "flowchart", direction: "TD" });
   const node = createNode("A", "Start", "rectangle");
   const newAST = addNode(ast, node);
-  
+
   assertEquals(newAST.nodes.size, 1);
   assertEquals(newAST.nodes.get("A"), node);
 });
@@ -76,7 +78,7 @@ Deno.test("Parser - Add edge to AST", () => {
   const ast = createAST({ type: "flowchart", direction: "TD" });
   const edge = createEdge("A", "B", "arrow");
   const newAST = addEdge(ast, edge);
-  
+
   assertEquals(newAST.edges.length, 1);
   assertEquals(newAST.edges[0], edge);
 });
@@ -93,11 +95,11 @@ flowchart LR
 
   const result = parseMermaid(input);
   assert(result.success, "Should parse complex flowchart");
-  
+
   const ast = result.data;
   assertEquals(ast.nodes.size, 5);
   assertEquals(ast.edges.length, 5);
-  
+
   // Check specific node shapes
   assertEquals(ast.nodes.get("A")?.shape, "stadium");
   assertEquals(ast.nodes.get("B")?.shape, "rhombus");
@@ -109,7 +111,7 @@ flowchart LR
 Deno.test("Parser - Invalid syntax should return error", () => {
   const input = "invalid mermaid syntax";
   const result = parseMermaid(input);
-  
+
   assert(!result.success, "Should fail on invalid syntax");
   assertExists(result.error);
 });
@@ -141,7 +143,7 @@ flowchart TD
 
   const result = parseMermaid(input);
   assert(result.success, "Should parse edge labels with special characters");
-  
+
   const ast = result.data;
   assertEquals(ast.edges.length, 3);
   assertEquals(ast.edges[0].label, '"Yes/No"');
@@ -158,7 +160,7 @@ flowchart TD
 
   const result = parseMermaid(input);
   assert(result.success, "Should parse node labels with spaces");
-  
+
   const ast = result.data;
   assertEquals(ast.nodes.get("A")?.label, '"Start Process"');
   assertEquals(ast.nodes.get("B")?.label, '"Make Decision"');
