@@ -218,8 +218,14 @@ class SpatialGrid {
   }
 }
 
-// Node shape dimensions for accurate connection points
-const getNodeDimensions = (shape: string): { width: number; height: number; radius?: number } => {
+// Node shape dimensions for accurate connection points (with optional label for dynamic sizing)
+const getNodeDimensions = (shape: string, label?: string): { width: number; height: number; radius?: number } => {
+  if (label) {
+    // Use dynamic sizing when label is provided
+    return calculateNodeDimensions(label, shape);
+  }
+
+  // Fallback to static dimensions for backward compatibility
   switch (shape) {
     case "circle":
       return { width: 60, height: 60, radius: 30 };
@@ -239,7 +245,8 @@ const getAccurateConnectionPoint = (
   fromPos: Position,
   toPos: Position,
   isStart: boolean,
-  nodeShape: string
+  nodeShape: string,
+  nodeLabel?: string
 ): Position => {
   const dx = toPos.x - fromPos.x;
   const dy = toPos.y - fromPos.y;
@@ -247,7 +254,7 @@ const getAccurateConnectionPoint = (
 
   if (distance === 0) return fromPos;
 
-  const dimensions = getNodeDimensions(nodeShape);
+  const dimensions = getNodeDimensions(nodeShape, nodeLabel);
   const basePos = isStart ? fromPos : toPos;
   const direction = isStart ? 1 : -1;
 
@@ -313,9 +320,10 @@ const lineIntersectsNode = (
   lineStart: Position,
   lineEnd: Position,
   nodePos: Position,
-  nodeShape: string
+  nodeShape: string,
+  nodeLabel?: string
 ): boolean => {
-  const dimensions = getNodeDimensions(nodeShape);
+  const dimensions = getNodeDimensions(nodeShape, nodeLabel);
   const padding = 15; // Increased padding for better clearance
 
   if (nodeShape === "circle") {
@@ -404,13 +412,16 @@ const improvedRouteEdgePath = (
   edge: MermaidEdge,
   layout: Layout,
   spatialGrid: SpatialGrid,
-  nodeShapes: Map<string, string>
+  nodeShapes: Map<string, string>,
+  nodeLabels: Map<string, string>
 ): Position[] => {
   const fromShape = nodeShapes.get(edge.from) || "rectangle";
   const toShape = nodeShapes.get(edge.to) || "rectangle";
+  const fromLabel = nodeLabels.get(edge.from) || "";
+  const toLabel = nodeLabels.get(edge.to) || "";
 
-  const startPoint = getAccurateConnectionPoint(fromPos, toPos, true, fromShape);
-  const endPoint = getAccurateConnectionPoint(fromPos, toPos, false, toShape);
+  const startPoint = getAccurateConnectionPoint(fromPos, toPos, true, fromShape, fromLabel);
+  const endPoint = getAccurateConnectionPoint(fromPos, toPos, false, toShape, toLabel);
 
   // Use spatial grid for faster collision detection
   const midPoint = {
@@ -429,8 +440,9 @@ const improvedRouteEdgePath = (
 
     const nodePos = layout.get(nodeId);
     const nodeShape = nodeShapes.get(nodeId) || "rectangle";
+    const nodeLabel = nodeLabels.get(nodeId) || "";
 
-    if (nodePos && lineIntersectsNode(startPoint, endPoint, nodePos, nodeShape)) {
+    if (nodePos && lineIntersectsNode(startPoint, endPoint, nodePos, nodeShape, nodeLabel)) {
       hasCollision = true;
       collidingNodes.push(nodeId);
     }
@@ -449,8 +461,9 @@ const improvedRouteEdgePath = (
   for (const nodeId of collidingNodes) {
     const nodePos = layout.get(nodeId);
     const nodeShape = nodeShapes.get(nodeId) || "rectangle";
+    const nodeLabel = nodeLabels.get(nodeId) || "";
     if (nodePos) {
-      const dimensions = getNodeDimensions(nodeShape);
+      const dimensions = getNodeDimensions(nodeShape, nodeLabel);
       const nodeClearance = Math.max(dimensions.width, dimensions.height) / 2 + 30;
       maxClearance = Math.max(maxClearance, nodeClearance);
     }
@@ -499,26 +512,139 @@ const improvedRouteEdgePath = (
   }
 };
 
-// Optimized node rendering with template literals
-const renderOptimizedSvgNode = (node: MermaidNode, position: Position, theme: string): string => {
+// Text measurement and wrapping utilities
+const estimateTextWidth = (text: string, fontSize: number = 12): number => {
+  // Rough estimation: average character width is ~0.6 * fontSize
+  return text.length * fontSize * 0.6;
+};
+
+const wrapText = (text: string, maxWidth: number, fontSize: number = 12): string[] => {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const testWidth = estimateTextWidth(testLine, fontSize);
+
+    if (testWidth <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        // Single word is too long, truncate it
+        const maxChars = Math.floor(maxWidth / (fontSize * 0.6)) - 3;
+        lines.push(word.substring(0, maxChars) + "...");
+        currentLine = "";
+      }
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.length > 0 ? lines : [text];
+};
+
+// Calculate dynamic node dimensions based on label content
+const calculateNodeDimensions = (label: string, shape: string): { width: number; height: number; radius?: number } => {
+  const fontSize = 12;
+  const padding = 16; // Padding inside the node
+  const minWidth = 60;
+  const minHeight = 30;
+
+  // Estimate text dimensions
+  const textWidth = estimateTextWidth(label, fontSize);
+  const requiredWidth = Math.max(minWidth, textWidth + padding);
+
+  switch (shape) {
+    case "circle": {
+      // For circles, use the larger of width/height requirements
+      const radius = Math.max(25, Math.sqrt(requiredWidth * requiredWidth + minHeight * minHeight) / 2 + 5);
+      return { width: radius * 2, height: radius * 2, radius };
+    }
+
+    case "rhombus": {
+      // Rhombus needs extra space due to diagonal orientation
+      return {
+        width: Math.max(80, requiredWidth * 1.4),
+        height: Math.max(40, minHeight + 10)
+      };
+    }
+
+    case "stadium": {
+      return {
+        width: Math.max(100, requiredWidth + 20),
+        height: Math.max(40, minHeight + 10)
+      };
+    }
+
+    default: {
+      // rectangle and others
+      return {
+        width: Math.max(minWidth, requiredWidth),
+        height: Math.max(minHeight, minHeight + 10)
+      };
+    }
+  }
+};
+
+// Improved node rendering with dynamic sizing and label backgrounds
+const renderImprovedSvgNode = (node: MermaidNode, position: Position, theme: string): string => {
   const { x, y } = position;
+  const dimensions = calculateNodeDimensions(node.label, node.shape);
+  const { width, height, radius } = dimensions;
+
+  // Calculate text positioning and wrapping
+  const maxTextWidth = width - 16; // Leave padding
+  const lines = wrapText(node.label, maxTextWidth);
+  const lineHeight = 14;
+  const totalTextHeight = lines.length * lineHeight;
+  const startY = y - (totalTextHeight / 2) + (lineHeight / 2);
+
+  // Generate text elements with background
+  const textElements = lines.map((line, index) => {
+    const textY = startY + (index * lineHeight);
+    const textWidth = estimateTextWidth(line, 12);
+    const backgroundWidth = textWidth + 8;
+    const backgroundHeight = lineHeight;
+
+    return `
+      <rect x="${x - backgroundWidth / 2}" y="${textY - backgroundHeight / 2}"
+            width="${backgroundWidth}" height="${backgroundHeight}"
+            fill="white" stroke="none" rx="2" opacity="0.9" class="node-label-bg"/>
+      <text x="${x}" y="${textY + 1}" text-anchor="middle"
+            font-size="12" fill="#333" class="node-label">${line}</text>`;
+  }).join('');
 
   return match(node.shape)
     .with("rectangle", () =>
-      `<rect x="${x - 40}" y="${y - 20}" width="80" height="40" class="node-rect ${theme}" stroke="currentColor" fill="none"/>
-       <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${node.label}</text>`
+      `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}"
+             class="node-rect ${theme}" stroke="currentColor" fill="none"/>
+       ${textElements}`
     )
     .with("circle", () =>
-      `<circle cx="${x}" cy="${y}" r="30" class="node-circle ${theme}" stroke="currentColor" fill="none"/>
-       <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${node.label}</text>`
+      `<circle cx="${x}" cy="${y}" r="${radius}"
+               class="node-circle ${theme}" stroke="currentColor" fill="none"/>
+       ${textElements}`
     )
     .with("rhombus", () =>
-      `<polygon points="${x - 40},${y} ${x},${y - 20} ${x + 40},${y} ${x},${y + 20}" class="node-rhombus ${theme}" stroke="currentColor" fill="none"/>
-       <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${node.label}</text>`
+      `<polygon points="${x - width / 2},${y} ${x},${y - height / 2} ${x + width / 2},${y} ${x},${y + height / 2}"
+               class="node-rhombus ${theme}" stroke="currentColor" fill="none"/>
+       ${textElements}`
+    )
+    .with("stadium", () =>
+      `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}"
+             rx="${height / 2}" class="node-stadium ${theme}" stroke="currentColor" fill="none"/>
+       ${textElements}`
     )
     .otherwise(() =>
-      `<rect x="${x - 40}" y="${y - 20}" width="80" height="40" rx="5" class="node-default ${theme}" stroke="currentColor" fill="none"/>
-       <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${node.label}</text>`
+      `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}"
+             rx="5" class="node-default ${theme}" stroke="currentColor" fill="none"/>
+       ${textElements}`
     );
 };
 
@@ -608,22 +734,24 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
     spatialGrid.addNode(nodeId, pos);
   });
 
-  // Create node shape mapping for accurate connection points
+  // Create node shape and label mappings for accurate connection points
   const nodeShapes = new Map<string, string>();
+  const nodeLabels = new Map<string, string>();
   nodes.forEach(node => {
     nodeShapes.set(node.id, node.shape);
+    nodeLabels.set(node.id, node.label);
   });
 
   // Pre-allocate arrays for better performance
   const nodeElements: string[] = new Array(nodes.length);
   const edgeElements: string[] = new Array(ast.edges.length);
 
-  // Batch render nodes
+  // Batch render nodes with improved rendering
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     const pos = layout.get(node.id);
     if (pos) {
-      nodeElements[i] = renderOptimizedSvgNode(node, pos, config.theme);
+      nodeElements[i] = renderImprovedSvgNode(node, pos, config.theme);
     }
   }
 
@@ -634,7 +762,7 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
     const toPos = layout.get(edge.to);
 
     if (fromPos && toPos) {
-      const pathPoints = improvedRouteEdgePath(fromPos, toPos, edge, layout, spatialGrid, nodeShapes);
+      const pathPoints = improvedRouteEdgePath(fromPos, toPos, edge, layout, spatialGrid, nodeShapes, nodeLabels);
       edgeElements[i] = renderImprovedSvgEdge(edge, pathPoints);
     }
   }
@@ -648,15 +776,22 @@ export const svgRenderer: Renderer<SvgConfig> = (ast, config) => {
                    xmlns="http://www.w3.org/2000/svg"
                    style="background-color: white;">
   <style>
-    .node-rect, .node-circle, .node-rhombus, .node-default { 
-      stroke-width: 2; 
+    .node-rect, .node-circle, .node-rhombus, .node-stadium, .node-default {
+      stroke-width: 2;
     }
     .light, .dark, .neutral { color: #333; }
     text { font-family: sans-serif; font-size: 12px; fill: #333; }
-    .edge-label { 
-      font-size: 10px; 
+    .edge-label {
+      font-size: 10px;
       fill: #333;
-      text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white;
+    }
+    .node-label {
+      font-size: 12px;
+      fill: #333;
+      font-weight: 500;
+    }
+    .node-label-bg {
+      opacity: 0.9;
     }
   </style>
   ${svgNodes}
