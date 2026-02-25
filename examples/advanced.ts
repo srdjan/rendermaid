@@ -25,65 +25,67 @@ flowchart LR
   H --> A
 `;
 
-console.log("🚀 Advanced RenderMaid Example\n");
+const runAdvancedExample = () => {
+  console.log("🚀 Advanced RenderMaid Example\n");
 
-// Parse and analyze
-const parseResult = parseMermaid(complexFlowchart);
+  // Parse and analyze
+  const parseResult = parseMermaid(complexFlowchart);
 
-if (parseResult.success) {
-  const ast = parseResult.data;
+  if (parseResult.success) {
+    const ast = parseResult.data;
 
-  // Analyze the diagram
-  const analysis = analyzeAST(ast);
-  console.log("📈 Diagram Analysis:");
-  console.log(`  Complexity Score: ${analysis.complexity}`);
-  console.log(`  Node Shapes: ${JSON.stringify(analysis.nodeShapes)}`);
-  console.log(`  Edge Types: ${JSON.stringify(analysis.edgeTypes)}`);
+    // Analyze the diagram
+    const analysis = analyzeAST(ast);
+    console.log("📈 Diagram Analysis:");
+    console.log(`  Complexity Score: ${analysis.complexity}`);
+    console.log(`  Node Shapes: ${JSON.stringify(analysis.nodeShapes)}`);
+    console.log(`  Edge Types: ${JSON.stringify(analysis.edgeTypes)}`);
 
-  // Validate the AST
-  const validationErrors = validateAST(ast);
-  if (validationErrors.length === 0) {
-    console.log("✅ AST validation passed");
-  } else {
-    console.log("⚠️ Validation issues:", validationErrors);
-  }
+    // Validate the AST
+    const validationErrors = validateAST(ast);
+    if (validationErrors.length === 0) {
+      console.log("✅ AST validation passed");
+    } else {
+      console.log("⚠️ Validation issues:", validationErrors);
+    }
 
-  // Custom transformation example
-  const addTimestampTransformer = (ast: MermaidAST): MermaidAST => {
-    const newMetadata = new Map(ast.metadata);
-    newMetadata.set("processedAt", new Date().toISOString());
-    return {
-      ...ast,
-      metadata: newMetadata
+    // Custom transformation example
+    const addTimestampTransformer = (ast: MermaidAST): MermaidAST => {
+      const newMetadata = new Map(ast.metadata);
+      newMetadata.set("processedAt", new Date().toISOString());
+      return {
+        ...ast,
+        metadata: newMetadata
+      };
     };
-  };
 
-  const enhancedAST = transformAST(ast, addTimestampTransformer);
-  console.log("🔄 Applied custom transformation");
+    const enhancedAST = transformAST(ast, addTimestampTransformer);
+    console.log("🔄 Applied custom transformation");
 
-  // Render with different configurations
-  const configs = [
-    { theme: "light" as const, name: "Light Theme" },
-    { theme: "dark" as const, name: "Dark Theme" },
-    { theme: "neutral" as const, name: "Neutral Theme" }
-  ];
+    // Render with different configurations
+    const configs = [
+      { theme: "light" as const, name: "Light Theme" },
+      { theme: "dark" as const, name: "Dark Theme" },
+      { theme: "neutral" as const, name: "Neutral Theme" }
+    ];
 
-  configs.forEach(({ theme, name }) => {
-    const result = renderSvg(enhancedAST, {
-      width: 1000,
-      height: 600,
-      theme,
-      nodeSpacing: 150
+    configs.forEach(({ theme, name }) => {
+      const result = renderSvg(enhancedAST, {
+        width: 1000,
+        height: 600,
+        theme,
+        nodeSpacing: 150
+      });
+
+      if (result.success) {
+        console.log(`🎨 ${name} SVG generated (${result.data.length} chars)`);
+      }
     });
 
-    if (result.success) {
-      console.log(`🎨 ${name} SVG generated (${result.data.length} chars)`);
-    }
-  });
-
-} else {
-  console.error("❌ Parse error:", parseResult.error);
-}
+  } else {
+    console.error("❌ Parse error:", parseResult.error);
+  }
+};
 
 // ============================================================================
 // MARKDOWN FILE PARSING EXAMPLES
@@ -319,6 +321,7 @@ const runMarkdownDemo = async (): Promise<void> => {
 
 // Export functions for use in tests
 export {
+  runAdvancedExample,
   extractMermaidFromMarkdown,
   parseMermaidFromMarkdownFile,
   createSampleMarkdownFiles,
@@ -327,5 +330,6 @@ export {
 
 // Run markdown demo if this file is executed directly
 if (import.meta.main) {
+  runAdvancedExample();
   await runMarkdownDemo();
 }
