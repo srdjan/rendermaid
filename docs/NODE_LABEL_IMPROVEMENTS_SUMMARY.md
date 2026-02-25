@@ -1,11 +1,16 @@
 # Node Label Improvements Summary
 
+> **Note**: This documents the original label improvements. A subsequent refactoring pass
+> consolidated `getNodeDimensions` into `calculateNodeDimensions`, replaced magic numbers
+> with named constants (`RENDERING.NODE_FONT_SIZE`, `RENDERING.NODE_TEXT_PADDING`, etc.),
+> and brought the test count to 65.
+
 ## Overview
 Fixed three critical node label rendering issues in the SVG diagram system to ensure professional-quality output with proper visibility, sizing, and positioning for all node types and label lengths.
 
 ## Issues Fixed
 
-### 1. Node Label Background Issue ✅
+### 1. Node Label Background Issue
 **Problem**: Node labels were rendered without proper background contrast, making them difficult to read when overlapping with node borders or other elements.
 
 **Solution**: 
@@ -32,7 +37,7 @@ const textElements = lines.map((line, index) => {
 }).join('');
 ```
 
-### 2. Node Label Overflow Issue ✅
+### 2. Node Label Overflow Issue
 **Problem**: Node labels were extending beyond node boundaries, causing visual overlap with adjacent elements.
 
 **Solution**:
@@ -63,7 +68,7 @@ const calculateNodeDimensions = (label: string, shape: string) => {
 };
 ```
 
-### 3. Text Positioning Accuracy ✅
+### 3. Text Positioning Accuracy
 **Problem**: Node labels were not properly centered within different node shapes, especially for circles and rhombuses.
 
 **Solution**:
@@ -91,25 +96,24 @@ const startY = y - (totalTextHeight / 2) + (lineHeight / 2);
 - `renderImprovedSvgNode(node, position, theme)` - Enhanced node rendering with backgrounds
 
 ### Modified Functions
-- `getNodeDimensions()` - Updated to accept optional label for dynamic sizing
-- `getAccurateConnectionPoint()` - Enhanced to use dynamic node dimensions
+- `calculateNodeDimensions()` - Now handles both empty-label fallback and dynamic sizing (consolidates the former `getNodeDimensions`)
 - `lineIntersectsNode()` - Updated for accurate collision detection with dynamic sizes
-- `improvedRouteEdgePath()` - Enhanced to use node labels for precise routing
+- `improvedRouteEdgePath()` - Enhanced to use node labels for precise routing, decomposed into `calculatePorts`, `generateOrthogonalPath`, and `avoidCollisions` helpers
 - `svgRenderer()` - Updated to use improved node rendering system
 
 ## Visual Improvements
 
 ### Before
-- ❌ Labels without backgrounds (poor readability)
-- ❌ Fixed node sizes (text overflow)
-- ❌ Basic text positioning (misalignment)
-- ❌ No text wrapping (long labels cut off)
+- Labels without backgrounds (poor readability)
+- Fixed node sizes (text overflow)
+- Basic text positioning (misalignment)
+- No text wrapping (long labels cut off)
 
 ### After
-- ✅ White background rectangles (excellent readability)
-- ✅ Dynamic node sizing (perfect fit for any label)
-- ✅ Shape-aware text positioning (precise centering)
-- ✅ Text wrapping support (handles very long labels)
+- White background rectangles (excellent readability)
+- Dynamic node sizing (proper fit for any label)
+- Shape-aware text positioning (precise centering)
+- Text wrapping support (handles very long labels)
 
 ## Technical Architecture
 
@@ -147,7 +151,7 @@ const startY = y - (totalTextHeight / 2) + (lineHeight / 2);
 ```
 
 ## Testing Results
-- **All 59 tests passing**: Complete compatibility maintained
+- **All 65 tests passing**: Complete compatibility maintained
 - **Dynamic sizing verified**: Long labels properly accommodated
 - **Background rendering confirmed**: White backgrounds on all node labels
 - **Shape consistency**: Proper rendering across rectangles, circles, rhombuses, stadiums

@@ -174,7 +174,9 @@ Deno.test("Integration - Round-trip: Mermaid -> AST -> Mermaid", () => {
   assertEquals(originalAST.nodes.size, reparsedAST.nodes.size);
   assertEquals(originalAST.edges.length, reparsedAST.edges.length);
   assertEquals(originalAST.diagramType.type, reparsedAST.diagramType.type);
-  assertEquals((originalAST.diagramType as any).direction, (reparsedAST.diagramType as any).direction);
+  if (originalAST.diagramType.type === "flowchart" && reparsedAST.diagramType.type === "flowchart") {
+    assertEquals(originalAST.diagramType.direction, reparsedAST.diagramType.direction);
+  }
 });
 
 Deno.test("Integration - Multi-format rendering consistency", () => {

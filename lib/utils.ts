@@ -134,7 +134,7 @@ export function compose<T>(...fns: Array<(x: T) => T>): (x: T) => T {
  * @param label Label to use in the performance log
  * @returns Wrapped function that logs execution time
  */
-export function withPerformanceMonitoring<T extends any[], R>(
+export function withPerformanceMonitoring<T extends unknown[], R>(
   fn: (...args: T) => R,
   label: string
 ): (...args: T) => R {

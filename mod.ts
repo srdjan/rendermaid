@@ -3,7 +3,7 @@
  * 
  * @example Basic usage
  * ```typescript
- * import { parseMermaid, renderSvg } from "@rendermaid/core";
+ * import { parseMermaid, renderSvg } from "@srdjan/rendermaid";
  * 
  * const diagram = `
  * flowchart TD
@@ -25,7 +25,7 @@
  * 
  * @example Advanced usage with analysis
  * ```typescript
- * import { parseMermaid, analyzeAST, validateAST, renderSvg } from "@rendermaid/core";
+ * import { parseMermaid, analyzeAST, validateAST, renderSvg } from "@srdjan/rendermaid";
  * 
  * const result = parseMermaid(diagram);
  * if (result.success) {
@@ -45,8 +45,8 @@
  * ```
  * 
  * @module
- * @version 0.0.3
- * @author RenderMaid Team
+ * @version 0.7.0
+ * @author Srdjan & Clody
  * @license MIT
  */
 

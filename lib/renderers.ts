@@ -80,6 +80,24 @@ type LayoutResult = {
   readonly canvasHeight: number;
 };
 
+const LAYOUT = {
+  MIN_NODE_GAP: 40,
+  INITIAL_LAYER_OFFSET: 60,
+  CANVAS_PADDING: 60,
+  LAYER_SPACING_MULTIPLIER: 1.5,
+} as const;
+
+const RENDERING = {
+  NODE_TEXT_PADDING: 16,
+  NODE_FONT_SIZE: 12,
+  MIN_NODE_WIDTH: 60,
+  MIN_NODE_HEIGHT: 30,
+  COLLISION_PADDING: 15,
+  COLLISION_AVOIDANCE_OFFSET: 40,
+  PORT_OFFSET: 2,
+  MAX_COLLISION_RETRIES: 3,
+} as const;
+
 // Cached layout computations
 const layoutCache = new Map<string, LayoutResult>();
 
@@ -98,6 +116,11 @@ const optimizedCalculateLayout = (ast: MermaidAST, config: SvgConfig): LayoutRes
   const layout = new Map<string, Position>();
 
   if (nodes.length === 0) return { layout, canvasWidth: config.width, canvasHeight: config.height };
+
+  const nodeDims = (nodeId: string) => {
+    const node = ast.nodes.get(nodeId);
+    return calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
+  };
 
   // Optimized topological sort with single pass
   const inDegree = new Map<string, number>();
@@ -165,105 +188,64 @@ const optimizedCalculateLayout = (ast: MermaidAST, config: SvgConfig): LayoutRes
 
   // Direction-aware positioning with label-aware spacing
   const isHorizontal = direction === "LR" || direction === "RL";
-  const minGap = 40; // Minimum gap between node edges
+  const minGap = LAYOUT.MIN_NODE_GAP;
+
+  const axis = isHorizontal
+    ? { layerDim: "width" as const, nodeDim: "height" as const, centerValue: config.height / 2 }
+    : { layerDim: "height" as const, nodeDim: "width" as const, centerValue: config.width / 2 };
+
   let maxX = config.width;
   let maxY = config.height;
+  let layerOffset = LAYOUT.INITIAL_LAYER_OFFSET;
 
-  if (isHorizontal) {
-    // Horizontal flow: layers go left-to-right, nodes stack vertically
-    const centerY = config.height / 2;
-    let layerX = 60;
+  for (let li = 0; li < layers.length; li++) {
+    const layer = layers[li];
 
-    for (let li = 0; li < layers.length; li++) {
-      const layer = layers[li];
-      let maxLayerWidth = 0;
-      for (const nodeId of layer) {
-        const node = ast.nodes.get(nodeId);
-        const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-        maxLayerWidth = Math.max(maxLayerWidth, dims.width);
-      }
-
-      const x = layerX + maxLayerWidth / 2;
-
-      // Cumulative y positions based on actual node heights
-      const yOffsets: number[] = [0];
-      for (let i = 1; i < layer.length; i++) {
-        const node = ast.nodes.get(layer[i]);
-        const prevNode = ast.nodes.get(layer[i - 1]);
-        const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-        const prevDims = calculateNodeDimensions(prevNode?.label ?? "", prevNode?.shape ?? "rectangle");
-        const needed = prevDims.height / 2 + minGap + dims.height / 2;
-        yOffsets.push(yOffsets[i - 1] + Math.max(config.nodeSpacing, needed));
-      }
-
-      const totalSpan = yOffsets[yOffsets.length - 1];
-      const startY = centerY - totalSpan / 2;
-
-      for (let i = 0; i < layer.length; i++) {
-        const pos = { x, y: startY + yOffsets[i] };
-        layout.set(layer[i], pos);
-        maxX = Math.max(maxX, pos.x + maxLayerWidth / 2 + 40);
-        maxY = Math.max(maxY, pos.y + 60);
-      }
-
-      // Advance to next layer
-      if (li < layers.length - 1) {
-        let nextMaxWidth = 0;
-        for (const nodeId of layers[li + 1]) {
-          const node = ast.nodes.get(nodeId);
-          const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-          nextMaxWidth = Math.max(nextMaxWidth, dims.width);
-        }
-        layerX = x + Math.max(config.nodeSpacing * 1.5, maxLayerWidth / 2 + minGap + nextMaxWidth / 2);
-      }
+    // Max size in the layer dimension
+    let maxLayerSize = 0;
+    for (const nodeId of layer) {
+      maxLayerSize = Math.max(maxLayerSize, nodeDims(nodeId)[axis.layerDim]);
     }
-  } else {
-    // Vertical flow (TD/TB/BT): layers stacked vertically, nodes spread horizontally
-    const centerX = config.width / 2;
-    let layerY = 60;
 
-    for (let li = 0; li < layers.length; li++) {
-      const layer = layers[li];
-      let maxLayerHeight = 0;
-      for (const nodeId of layer) {
-        const node = ast.nodes.get(nodeId);
-        const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-        maxLayerHeight = Math.max(maxLayerHeight, dims.height);
+    const layerCoord = layerOffset + maxLayerSize / 2;
+
+    // Cumulative offsets in the node dimension
+    const offsets: number[] = [0];
+    for (let i = 1; i < layer.length; i++) {
+      const dims = nodeDims(layer[i]);
+      const prevDims = nodeDims(layer[i - 1]);
+      const needed = prevDims[axis.nodeDim] / 2 + minGap + dims[axis.nodeDim] / 2;
+      offsets.push(offsets[i - 1] + Math.max(config.nodeSpacing, needed));
+    }
+
+    const totalSpan = offsets[offsets.length - 1];
+    const startNode = axis.centerValue - totalSpan / 2;
+
+    for (let i = 0; i < layer.length; i++) {
+      const nodeCoord = startNode + offsets[i];
+      const pos = isHorizontal
+        ? { x: layerCoord, y: nodeCoord }
+        : { x: nodeCoord, y: layerCoord };
+      layout.set(layer[i], pos);
+
+      if (isHorizontal) {
+        maxX = Math.max(maxX, pos.x + maxLayerSize / 2 + LAYOUT.MIN_NODE_GAP);
+      } else {
+        maxX = Math.max(maxX, pos.x + LAYOUT.CANVAS_PADDING);
       }
+      maxY = Math.max(maxY, pos.y + LAYOUT.CANVAS_PADDING);
+    }
 
-      const y = layerY + maxLayerHeight / 2;
-
-      // Cumulative x positions based on actual node widths
-      const xOffsets: number[] = [0];
-      for (let i = 1; i < layer.length; i++) {
-        const node = ast.nodes.get(layer[i]);
-        const prevNode = ast.nodes.get(layer[i - 1]);
-        const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-        const prevDims = calculateNodeDimensions(prevNode?.label ?? "", prevNode?.shape ?? "rectangle");
-        const needed = prevDims.width / 2 + minGap + dims.width / 2;
-        xOffsets.push(xOffsets[i - 1] + Math.max(config.nodeSpacing, needed));
+    // Advance to next layer
+    if (li < layers.length - 1) {
+      let nextMaxSize = 0;
+      for (const nodeId of layers[li + 1]) {
+        nextMaxSize = Math.max(nextMaxSize, nodeDims(nodeId)[axis.layerDim]);
       }
-
-      const totalSpan = xOffsets[xOffsets.length - 1];
-      const startX = centerX - totalSpan / 2;
-
-      for (let i = 0; i < layer.length; i++) {
-        const pos = { x: startX + xOffsets[i], y };
-        layout.set(layer[i], pos);
-        maxX = Math.max(maxX, pos.x + 60);
-        maxY = Math.max(maxY, pos.y + 60);
-      }
-
-      // Advance to next layer
-      if (li < layers.length - 1) {
-        let nextMaxHeight = 0;
-        for (const nodeId of layers[li + 1]) {
-          const node = ast.nodes.get(nodeId);
-          const dims = calculateNodeDimensions(node?.label ?? "", node?.shape ?? "rectangle");
-          nextMaxHeight = Math.max(nextMaxHeight, dims.height);
-        }
-        layerY = y + Math.max(config.nodeSpacing * 1.5, maxLayerHeight / 2 + minGap + nextMaxHeight / 2);
-      }
+      layerOffset = layerCoord + Math.max(
+        config.nodeSpacing * LAYOUT.LAYER_SPACING_MULTIPLIER,
+        maxLayerSize / 2 + minGap + nextMaxSize / 2
+      );
     }
   }
 
@@ -309,28 +291,6 @@ const toPathSegments = (points: readonly Position[]): Array<readonly [Position, 
   return segments;
 };
 
-// Node shape dimensions for accurate connection points (with optional label for dynamic sizing)
-const getNodeDimensions = (shape: string, label?: string): { width: number; height: number; radius?: number } => {
-  if (label) {
-    // Use dynamic sizing when label is provided
-    return calculateNodeDimensions(label, shape);
-  }
-
-  // Fallback to static dimensions for backward compatibility
-  switch (shape) {
-    case "circle":
-      return { width: 60, height: 60, radius: 30 };
-    case "rhombus":
-      return { width: 80, height: 40 };
-    case "stadium":
-      return { width: 100, height: 40 };
-    case "hexagon":
-      return { width: 90, height: 40 };
-    default: // rectangle and others
-      return { width: 80, height: 40 };
-  }
-};
-
 // Line-node intersection with shape awareness
 const lineIntersectsNode = (
   lineStart: Position,
@@ -339,8 +299,8 @@ const lineIntersectsNode = (
   nodeShape: string,
   nodeLabel?: string
 ): boolean => {
-  const dimensions = getNodeDimensions(nodeShape, nodeLabel);
-  const padding = 15; // Increased padding for better clearance
+  const dimensions = calculateNodeDimensions(nodeLabel ?? "", nodeShape);
+  const padding = RENDERING.COLLISION_PADDING;
 
   if (nodeShape === "circle") {
     // Circle intersection using distance to line
@@ -421,6 +381,134 @@ const lineIntersectsLine = (
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 };
 
+// Calculate exit/entry port positions on node boundaries
+const calculatePorts = (
+  fromPos: Position,
+  toPos: Position,
+  fromDim: { width: number; height: number },
+  toDim: { width: number; height: number },
+  isVertical: boolean,
+  isReversed: boolean,
+  sameLayer: boolean
+): { exitPort: Position; entryPort: Position } => {
+  if (sameLayer) {
+    if (isVertical) {
+      const goRight = toPos.x > fromPos.x;
+      return {
+        exitPort: {
+          x: fromPos.x + (goRight ? fromDim.width / 2 + RENDERING.PORT_OFFSET : -fromDim.width / 2 - RENDERING.PORT_OFFSET),
+          y: fromPos.y
+        },
+        entryPort: {
+          x: toPos.x + (goRight ? -toDim.width / 2 - RENDERING.PORT_OFFSET : toDim.width / 2 + RENDERING.PORT_OFFSET),
+          y: toPos.y
+        }
+      };
+    }
+    const goDown = toPos.y > fromPos.y;
+    return {
+      exitPort: {
+        x: fromPos.x,
+        y: fromPos.y + (goDown ? fromDim.height / 2 + RENDERING.PORT_OFFSET : -fromDim.height / 2 - RENDERING.PORT_OFFSET)
+      },
+      entryPort: {
+        x: toPos.x,
+        y: toPos.y + (goDown ? -toDim.height / 2 - RENDERING.PORT_OFFSET : toDim.height / 2 + RENDERING.PORT_OFFSET)
+      }
+    };
+  }
+
+  if (isVertical) {
+    return isReversed
+      ? { exitPort: { x: fromPos.x, y: fromPos.y - fromDim.height / 2 - RENDERING.PORT_OFFSET },
+          entryPort: { x: toPos.x, y: toPos.y + toDim.height / 2 + RENDERING.PORT_OFFSET } }
+      : { exitPort: { x: fromPos.x, y: fromPos.y + fromDim.height / 2 + RENDERING.PORT_OFFSET },
+          entryPort: { x: toPos.x, y: toPos.y - toDim.height / 2 - RENDERING.PORT_OFFSET } };
+  }
+
+  return isReversed
+    ? { exitPort: { x: fromPos.x - fromDim.width / 2 - RENDERING.PORT_OFFSET, y: fromPos.y },
+        entryPort: { x: toPos.x + toDim.width / 2 + RENDERING.PORT_OFFSET, y: toPos.y } }
+    : { exitPort: { x: fromPos.x + fromDim.width / 2 + RENDERING.PORT_OFFSET, y: fromPos.y },
+        entryPort: { x: toPos.x - toDim.width / 2 - RENDERING.PORT_OFFSET, y: toPos.y } };
+};
+
+// Generate straight or Z-shaped orthogonal path between two ports
+const generateOrthogonalPath = (exitPort: Position, entryPort: Position, isVertical: boolean): Position[] => {
+  if (isVertical) {
+    if (Math.abs(exitPort.x - entryPort.x) < 2) {
+      return [exitPort, entryPort];
+    }
+    const midY = (exitPort.y + entryPort.y) / 2;
+    return [exitPort, { x: exitPort.x, y: midY }, { x: entryPort.x, y: midY }, entryPort];
+  }
+
+  if (Math.abs(exitPort.y - entryPort.y) < 2) {
+    return [exitPort, entryPort];
+  }
+  const midX = (exitPort.x + entryPort.x) / 2;
+  return [exitPort, { x: midX, y: exitPort.y }, { x: midX, y: entryPort.y }, entryPort];
+};
+
+// Iteratively shift path to avoid collisions with intermediate nodes
+const avoidCollisions = (
+  path: Position[],
+  excludeIds: ReadonlySet<string>,
+  layout: Layout,
+  nodeShapes: Map<string, string>,
+  nodeLabels: Map<string, string>,
+  isVertical: boolean
+): Position[] => {
+  let current = path;
+  let segments = toPathSegments(current);
+  let collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
+
+  // If collision on a straight line, promote to Z-shape
+  if (collisions.length > 0 && current.length === 2) {
+    const initialOffset = RENDERING.COLLISION_AVOIDANCE_OFFSET;
+    if (isVertical) {
+      const collidingPos = layout.get(collisions[0]);
+      const shiftDir = collidingPos && collidingPos.x > current[0].x ? -1 : 1;
+      const detourX = current[0].x + shiftDir * initialOffset;
+      current = [current[0], { x: detourX, y: current[0].y }, { x: detourX, y: current[1].y }, current[1]];
+    } else {
+      const collidingPos = layout.get(collisions[0]);
+      const shiftDir = collidingPos && collidingPos.y > current[0].y ? -1 : 1;
+      const detourY = current[0].y + shiftDir * initialOffset;
+      current = [current[0], { x: current[0].x, y: detourY }, { x: current[1].x, y: detourY }, current[1]];
+    }
+    segments = toPathSegments(current);
+    collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
+  }
+
+  // Shift routing channel outward on retries
+  let retries = 0;
+  while (collisions.length > 0 && retries < RENDERING.MAX_COLLISION_RETRIES) {
+    const shiftAmount = RENDERING.COLLISION_AVOIDANCE_OFFSET * (retries + 1);
+    const collidingPos = layout.get(collisions[0]);
+
+    if (isVertical && current.length === 4) {
+      const currentDetour = current[1].x;
+      const shiftDir = collidingPos && collidingPos.x > currentDetour ? -1 : 1;
+      const newDetour = currentDetour + shiftDir * shiftAmount;
+      current = [current[0], { x: newDetour, y: current[0].y }, { x: newDetour, y: current[3].y }, current[3]];
+    } else if (!isVertical && current.length === 4) {
+      const currentDetour = current[1].y;
+      const shiftDir = collidingPos && collidingPos.y > currentDetour ? -1 : 1;
+      const newDetour = currentDetour + shiftDir * shiftAmount;
+      current = [current[0], { x: current[0].x, y: newDetour }, { x: current[3].x, y: newDetour }, current[3]];
+    } else {
+      break;
+    }
+
+    segments = toPathSegments(current);
+    collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
+    retries++;
+  }
+
+  return current;
+};
+
 // Direction-aware orthogonal (Manhattan) edge routing with full collision detection
 const improvedRouteEdgePath = (
   fromPos: Position,
@@ -431,180 +519,21 @@ const improvedRouteEdgePath = (
   nodeLabels: Map<string, string>,
   direction: string
 ): Position[] => {
-  const fromShape = nodeShapes.get(edge.from) || "rectangle";
-  const toShape = nodeShapes.get(edge.to) || "rectangle";
-  const fromLabel = nodeLabels.get(edge.from) || "";
-  const toLabel = nodeLabels.get(edge.to) || "";
-  const fromDim = getNodeDimensions(fromShape, fromLabel);
-  const toDim = getNodeDimensions(toShape, toLabel);
+  const fromDim = calculateNodeDimensions(nodeLabels.get(edge.from) || "", nodeShapes.get(edge.from) || "rectangle");
+  const toDim = calculateNodeDimensions(nodeLabels.get(edge.to) || "", nodeShapes.get(edge.to) || "rectangle");
 
   const isVertical = direction === "TD" || direction === "TB" || direction === "BT";
   const isReversed = direction === "BT" || direction === "RL";
-
-  // Determine if nodes are in the same layer
   const sameLayer = isVertical
     ? Math.abs(fromPos.y - toPos.y) < 10
     : Math.abs(fromPos.x - toPos.x) < 10;
 
-  // Calculate exit and entry ports based on direction
-  let exitPort: Position;
-  let entryPort: Position;
+  const { exitPort, entryPort } = calculatePorts(fromPos, toPos, fromDim, toDim, isVertical, isReversed, sameLayer);
 
-  if (sameLayer) {
-    // Same-layer edges: use perpendicular ports
-    if (isVertical) {
-      const goRight = toPos.x > fromPos.x;
-      exitPort = {
-        x: fromPos.x + (goRight ? fromDim.width / 2 + 2 : -fromDim.width / 2 - 2),
-        y: fromPos.y
-      };
-      entryPort = {
-        x: toPos.x + (goRight ? -toDim.width / 2 - 2 : toDim.width / 2 + 2),
-        y: toPos.y
-      };
-    } else {
-      const goDown = toPos.y > fromPos.y;
-      exitPort = {
-        x: fromPos.x,
-        y: fromPos.y + (goDown ? fromDim.height / 2 + 2 : -fromDim.height / 2 - 2)
-      };
-      entryPort = {
-        x: toPos.x,
-        y: toPos.y + (goDown ? -toDim.height / 2 - 2 : toDim.height / 2 + 2)
-      };
-    }
-    return [exitPort, entryPort];
-  }
+  if (sameLayer) return [exitPort, entryPort];
 
-  // Cross-layer edges: use direction-aligned ports
-  if (isVertical) {
-    if (isReversed) {
-      // BT: exit top, enter bottom
-      exitPort = { x: fromPos.x, y: fromPos.y - fromDim.height / 2 - 2 };
-      entryPort = { x: toPos.x, y: toPos.y + toDim.height / 2 + 2 };
-    } else {
-      // TD/TB: exit bottom, enter top
-      exitPort = { x: fromPos.x, y: fromPos.y + fromDim.height / 2 + 2 };
-      entryPort = { x: toPos.x, y: toPos.y - toDim.height / 2 - 2 };
-    }
-  } else {
-    if (isReversed) {
-      // RL: exit left, enter right
-      exitPort = { x: fromPos.x - fromDim.width / 2 - 2, y: fromPos.y };
-      entryPort = { x: toPos.x + toDim.width / 2 + 2, y: toPos.y };
-    } else {
-      // LR: exit right, enter left
-      exitPort = { x: fromPos.x + fromDim.width / 2 + 2, y: fromPos.y };
-      entryPort = { x: toPos.x - toDim.width / 2 - 2, y: toPos.y };
-    }
-  }
-
-  // Generate orthogonal path
-  let path: Position[];
-
-  if (isVertical) {
-    if (Math.abs(exitPort.x - entryPort.x) < 2) {
-      // Vertically aligned: straight line
-      path = [exitPort, entryPort];
-    } else {
-      // Z-shape: vertical -> horizontal -> vertical
-      const midY = (exitPort.y + entryPort.y) / 2;
-      path = [
-        exitPort,
-        { x: exitPort.x, y: midY },
-        { x: entryPort.x, y: midY },
-        entryPort
-      ];
-    }
-  } else {
-    if (Math.abs(exitPort.y - entryPort.y) < 2) {
-      // Horizontally aligned: straight line
-      path = [exitPort, entryPort];
-    } else {
-      // Z-shape: horizontal -> vertical -> horizontal
-      const midX = (exitPort.x + entryPort.x) / 2;
-      path = [
-        exitPort,
-        { x: midX, y: exitPort.y },
-        { x: midX, y: entryPort.y },
-        entryPort
-      ];
-    }
-  }
-
-  // Full-path collision detection against all nodes
-  const excludeIds = new Set([edge.from, edge.to]);
-  let segments = toPathSegments(path);
-  let collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
-
-  // If collision on a straight line, promote to Z-shape for avoidance
-  if (collisions.length > 0 && path.length === 2) {
-    const initialOffset = 40;
-    if (isVertical) {
-      // Straight vertical line collides: create Z-shape going left/right
-      const collidingPos = layout.get(collisions[0]);
-      const shiftDir = collidingPos && collidingPos.x > path[0].x ? -1 : 1;
-      const detourX = path[0].x + shiftDir * initialOffset;
-      path = [
-        path[0],
-        { x: detourX, y: path[0].y },
-        { x: detourX, y: path[1].y },
-        path[1]
-      ];
-    } else {
-      // Straight horizontal line collides: create Z-shape going up/down
-      const collidingPos = layout.get(collisions[0]);
-      const shiftDir = collidingPos && collidingPos.y > path[0].y ? -1 : 1;
-      const detourY = path[0].y + shiftDir * initialOffset;
-      path = [
-        path[0],
-        { x: path[0].x, y: detourY },
-        { x: path[1].x, y: detourY },
-        path[1]
-      ];
-    }
-    segments = toPathSegments(path);
-    collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
-  }
-
-  // If collision detected on Z-shape, shift routing channel outward (max 3 retries)
-  let retries = 0;
-  while (collisions.length > 0 && retries < 3) {
-    const shiftAmount = 40 * (retries + 1);
-    const collidingPos = layout.get(collisions[0]);
-
-    if (isVertical && path.length === 4) {
-      // Shift the vertical detour channel further left or right
-      const currentDetourX = path[1].x;
-      const shiftDir = collidingPos && collidingPos.x > currentDetourX ? -1 : 1;
-      const newDetourX = currentDetourX + shiftDir * shiftAmount;
-      path = [
-        path[0],
-        { x: newDetourX, y: path[0].y },
-        { x: newDetourX, y: path[3].y },
-        path[3]
-      ];
-    } else if (!isVertical && path.length === 4) {
-      // Shift the horizontal detour channel further up or down
-      const currentDetourY = path[1].y;
-      const shiftDir = collidingPos && collidingPos.y > currentDetourY ? -1 : 1;
-      const newDetourY = currentDetourY + shiftDir * shiftAmount;
-      path = [
-        path[0],
-        { x: path[0].x, y: newDetourY },
-        { x: path[3].x, y: newDetourY },
-        path[3]
-      ];
-    } else {
-      break;
-    }
-
-    segments = toPathSegments(path);
-    collisions = findCollidingNodes(segments, excludeIds, layout, nodeShapes, nodeLabels);
-    retries++;
-  }
-
-  return path;
+  const path = generateOrthogonalPath(exitPort, entryPort, isVertical);
+  return avoidCollisions(path, new Set([edge.from, edge.to]), layout, nodeShapes, nodeLabels, isVertical);
 };
 
 // Text measurement and wrapping utilities
@@ -646,10 +575,26 @@ const wrapText = (text: string, maxWidth: number, fontSize: number = 12): string
 
 // Calculate dynamic node dimensions based on label content
 const calculateNodeDimensions = (label: string, shape: string): { width: number; height: number; radius?: number } => {
-  const fontSize = 12;
-  const padding = 16; // Padding inside the node
-  const minWidth = 60;
-  const minHeight = 30;
+  // When no label is provided, return static fallback dimensions
+  if (!label) {
+    switch (shape) {
+      case "circle":
+        return { width: RENDERING.MIN_NODE_WIDTH, height: RENDERING.MIN_NODE_WIDTH, radius: RENDERING.MIN_NODE_WIDTH / 2 };
+      case "rhombus":
+        return { width: 80, height: 40 };
+      case "stadium":
+        return { width: 100, height: 40 };
+      case "hexagon":
+        return { width: 90, height: 40 };
+      default:
+        return { width: 80, height: 40 };
+    }
+  }
+
+  const fontSize = RENDERING.NODE_FONT_SIZE;
+  const padding = RENDERING.NODE_TEXT_PADDING;
+  const minWidth = RENDERING.MIN_NODE_WIDTH;
+  const minHeight = RENDERING.MIN_NODE_HEIGHT;
 
   // Estimate text dimensions
   const textWidth = estimateTextWidth(label, fontSize);
@@ -694,7 +639,7 @@ const renderImprovedSvgNode = (node: MermaidNode, position: Position, theme: str
   const { width, height, radius } = dimensions;
 
   // Calculate text positioning and wrapping
-  const maxTextWidth = width - 16; // Leave padding
+  const maxTextWidth = width - RENDERING.NODE_TEXT_PADDING;
   const lines = wrapText(node.label, maxTextWidth);
   const lineHeight = 14;
   const totalTextHeight = lines.length * lineHeight;
@@ -983,9 +928,11 @@ export const jsonRenderer: Renderer<JsonConfig> = (ast, config) => {
 };
 
 /**
- * Direct Mermaid renderer that converts AST back to Mermaid syntax
+ * Direct Mermaid renderer that converts AST back to Mermaid syntax.
+ * Note: preserveFormatting and includeComments config fields are accepted
+ * for API compatibility but not yet implemented.
  * @param ast The Abstract Syntax Tree to convert
- * @param _config Mermaid output configuration (currently unused)
+ * @param _config Mermaid output configuration (reserved for future use)
  * @returns A Result containing the Mermaid syntax string or an error
  */
 export const mermaidRenderer: Renderer<MermaidConfig> = (ast, _config) => {

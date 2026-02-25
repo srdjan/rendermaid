@@ -4,35 +4,35 @@ A high-performance, functional TypeScript library for parsing and rendering Merm
 
 **Supports both programmatic diagram creation and parsing diagrams from markdown files.**
 
-[![JSR](https://jsr.io/badges/@rendermaid/core)](https://jsr.io/@rendermaid/core)
+[![JSR](https://jsr.io/badges/@srdjan/rendermaid)](https://jsr.io/@srdjan/rendermaid)
 
-## ✨ Features
+## Features
 
-- **🚀 High Performance**: Optimized tokenization-based parser with spatial grid rendering
-- **🎯 Functional Architecture**: Immutable data structures and pure functions throughout
-- **📊 Multi-format Output**: SVG, HTML, JSON, and round-trip Mermaid rendering
-- **📝 Markdown Integration**: Parse diagrams directly from markdown files and content
-- **🔄 Smart Edge Routing**: Intelligent collision avoidance for clean diagrams
-- **📱 Professional Styling**: White backgrounds with proper contrast and typography
-- **⚡ Type-Safe**: Full TypeScript support with discriminated unions and pattern matching
-- **🧪 Comprehensive Testing**: Performance benchmarks and validation included
+- **High Performance**: Optimized tokenization-based parser with spatial grid rendering
+- **Functional Architecture**: Immutable data structures and pure functions throughout
+- **Multi-format Output**: SVG, HTML, JSON, and round-trip Mermaid rendering
+- **Markdown Integration**: Parse diagrams directly from markdown files and content
+- **Smart Edge Routing**: Orthogonal routing with collision avoidance for clean diagrams
+- **Professional Styling**: White backgrounds with proper contrast and typography
+- **Type-Safe**: Full TypeScript support with discriminated unions and pattern matching
+- **Comprehensive Testing**: 65 tests across parser, renderers, utilities, and integration
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
 ```bash
 # Deno
-deno add @rendermaid/core
+deno add @srdjan/rendermaid
 
 # Node.js/Bun
-npx jsr add @rendermaid/core
+npx jsr add @srdjan/rendermaid
 ```
 
 ### Basic Usage
 
 ```typescript
-import { parseMermaid, renderSvg } from "@rendermaid/core";
+import { parseMermaid, renderSvg } from "@srdjan/rendermaid";
 
 const diagram = `
 flowchart TD
@@ -65,7 +65,7 @@ if (parseResult.success) {
 RenderMaid can extract and parse Mermaid diagrams directly from markdown files:
 
 ```typescript
-import { parseMermaidFromMarkdownFile } from "@rendermaid/core";
+import { parseMermaidFromMarkdownFile } from "@srdjan/rendermaid";
 
 // Parse all diagrams from a markdown file
 const result = await parseMermaidFromMarkdownFile("documentation.md");
@@ -120,7 +120,7 @@ flowchart LR
 You can also extract diagrams from markdown content directly:
 
 ```typescript
-import { extractMermaidFromMarkdown } from "@rendermaid/core";
+import { extractMermaidFromMarkdown } from "@srdjan/rendermaid";
 
 const markdownContent = `
 # Documentation
@@ -147,7 +147,7 @@ diagrams.forEach(diagramCode => {
 
 ```
 
-## 📚 API Reference
+## API Reference
 
 ### Core Functions
 
@@ -267,6 +267,11 @@ type JsonConfig = {
   pretty: boolean;
   includeMetadata: boolean;
 };
+
+type MermaidConfig = {
+  preserveFormatting: boolean;
+  includeComments: boolean;
+};
 ```
 
 ### AST Types
@@ -295,7 +300,7 @@ type MermaidEdge = {
 };
 ```
 
-## 🎨 Supported Diagram Elements
+## Supported Diagram Elements
 
 ### Node Shapes
 
@@ -313,10 +318,9 @@ type MermaidEdge = {
 | Type | Syntax | Description |
 |------|--------|-------------|
 | Arrow | `-->` | Standard arrow |
-| Line | `---` | Simple line |
+| Dashed | `---` | Dashed line (no arrowhead) |
 | Thick | `==>` | Thick arrow |
 | Dotted | `-.->` | Dotted arrow |
-| Dashed | `---` | Dashed line |
 
 ### Edge Labels
 
@@ -327,26 +331,27 @@ flowchart TD
   B -->|No| D[Stop]
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 RenderMaid follows functional programming principles:
 
 - **Immutable Data**: All AST operations return new instances
 - **Pure Functions**: Renderers are side-effect free transformations
-- **Type Safety**: Leverages TypeScript's type system and pattern matching
-- **Performance**: Optimized with caching, spatial grids, and efficient algorithms
+- **Type Safety**: Leverages TypeScript's type system and pattern matching (zero `any` usage)
+- **Named Constants**: All layout and rendering parameters are centralized in `LAYOUT` and `RENDERING` constant objects
+- **Decomposed Rendering**: Edge routing is split into focused helpers: port calculation, orthogonal path generation, and collision avoidance
 
 ### Performance Features
 
 - **Tokenization-based Parser**: 1.4-1.7x faster than combinator approach
-- **Layout Caching**: Cached layouts by diagram characteristics  
-- **Spatial Grid**: O(1) collision detection for edge routing
+- **Layout Caching**: Cached layouts by diagram characteristics
+- **Axis-parameterized Layout**: Unified horizontal/vertical layout logic via dimension keys
 - **Pre-allocated Arrays**: Reduced memory allocations during rendering
 
-## 🔄 Functional Pipeline Example
+## Functional Pipeline Example
 
 ```typescript
-import { parseMermaid, renderSvg, renderJson } from "@rendermaid/core";
+import { parseMermaid, renderSvg, renderJson } from "@srdjan/rendermaid";
 
 const processDiagram = (input: string) => {
   const parseResult = parseMermaid(input);
@@ -372,12 +377,12 @@ flowchart TD
 `);
 ```
 
-## 🧪 Testing & Validation
+## Testing and Validation
 
 RenderMaid includes comprehensive validation:
 
 ```typescript
-import { validateAST, analyzeAST } from "@rendermaid/core";
+import { validateAST, analyzeAST } from "@srdjan/rendermaid";
 
 const parseResult = parseMermaid(diagram);
 if (parseResult.success) {
@@ -396,7 +401,7 @@ if (parseResult.success) {
 }
 ```
 
-## ⚡ Performance
+## Performance
 
 Performance characteristics on modern hardware:
 
@@ -408,21 +413,21 @@ Performance characteristics on modern hardware:
 
 *Performance scales sub-linearly with diagram size*
 
-## 🔧 Development
+## Development
 
 ```bash
 # Clone and setup
-git clone <repository>
+git clone https://github.com/srdjan/rendermaid.git
 cd rendermaid
 
 # Run demo
 deno task demo
 
-# Run performance tests  
+# Run performance benchmarks
 deno task perf
 
-# Development with file watching
-deno task dev
+# Run end-to-end tests
+deno task e2e
 
 # Test markdown parsing with example file
 deno task markdown
@@ -430,8 +435,9 @@ deno task markdown
 
 ### Example Files
 
-- `examples/markdown-examples.md` - Comprehensive markdown file with 4 different diagram types
-- `examples/advanced.ts` - Advanced usage examples including markdown parsing
+- `examples/basic.ts` - Basic usage: parsing, rendering, and format output
+- `examples/advanced.ts` - Advanced usage: markdown parsing, analysis, and composition
+- `examples/markdown-examples.md` - Sample markdown file with multiple diagram types
 
 ### Testing
 
@@ -453,9 +459,9 @@ deno task markdown
 
 **Test Coverage:**
 
-- **59 unit tests** across parser, renderers, utilities, markdown parsing, and integration
+- **65 tests** across parser, renderers, utilities, markdown parsing, and integration
 - **Parser tests**: Node/edge creation, AST operations, error handling
-- **Renderer tests**: SVG, HTML, JSON, Mermaid output with various configurations
+- **Renderer tests**: SVG, HTML, JSON, Mermaid output, layout correctness, edge routing, collision avoidance
 - **Markdown tests**: File parsing, content extraction, mixed valid/invalid diagrams
 - **Utility tests**: AST analysis, validation, transformation, performance monitoring
 - **Integration tests**: End-to-end workflows, round-trip testing, performance validation
@@ -468,7 +474,7 @@ Test files are located in the `tests/` directory:
 - `tests/markdown.test.ts` - Markdown parsing tests
 - `tests/integration.test.ts` - Integration and workflow tests
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -477,11 +483,11 @@ Test files are located in the `tests/` directory:
 5. Ensure performance benchmarks pass
 6. Submit a pull request
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🔗 Related Projects
+## Related Projects
 
 - [Mermaid.js](https://mermaid.js.org/) - The original Mermaid diagramming tool
 - [ts-pattern](https://github.com/gvergnaud/ts-pattern) - Pattern matching library used internally

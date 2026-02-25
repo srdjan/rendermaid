@@ -5,15 +5,15 @@
  * for the RenderMaid Mermaid diagram processing library.
  * 
  * @module docs
- * @version 0.0.3
- * @author RenderMaid Team
+ * @version 0.7.0
+ * @author Srdjan & Clody
  * @since 0.0.1
  */
 
 /**
  * @example Quick Start - Basic diagram parsing and rendering
  * ```typescript
- * import { parseMermaid, renderSvg } from "@rendermaid/core";
+ * import { parseMermaid, renderSvg } from "@srdjan/rendermaid";
  * 
  * // Define a simple flowchart
  * const diagram = `
@@ -53,7 +53,7 @@
  *   renderHtml, 
  *   renderJson, 
  *   renderMermaid 
- * } from "@rendermaid/core";
+ * } from "@srdjan/rendermaid";
  * 
  * const diagram = `
  * flowchart LR
@@ -94,7 +94,7 @@
  *   analyzeAST, 
  *   enhanceAST,
  *   transformAST 
- * } from "@rendermaid/core";
+ * } from "@srdjan/rendermaid";
  * 
  * const complexDiagram = `
  * flowchart TD
@@ -150,7 +150,7 @@
  *   parseMermaid, 
  *   renderSvg, 
  *   withPerformanceMonitoring 
- * } from "@rendermaid/core";
+ * } from "@srdjan/rendermaid";
  * 
  * // Create performance-monitored functions
  * const timedParse = withPerformanceMonitoring(parseMermaid, "Parse");
@@ -180,7 +180,7 @@
 /**
  * @example Error handling - Robust error management
  * ```typescript
- * import { parseMermaid, renderSvg, type Result } from "@rendermaid/core";
+ * import { parseMermaid, renderSvg, type Result } from "@srdjan/rendermaid";
  * 
  * function processUserDiagram(input: string): Result<string> {
  *   // Parse with error handling
@@ -229,7 +229,7 @@
  *   analyzeAST, 
  *   compose,
  *   type MermaidAST 
- * } from "@rendermaid/core";
+ * } from "@srdjan/rendermaid";
  * 
  * // Create reusable transformation functions
  * const addTimestamp = (ast: MermaidAST): MermaidAST => ({
@@ -275,7 +275,7 @@
  *   addNode, 
  *   addEdge,
  *   renderSvg 
- * } from "@rendermaid/core";
+ * } from "@srdjan/rendermaid";
  * 
  * // Build AST programmatically with different node shapes
  * let ast = createAST({ type: "flowchart", direction: "LR" });

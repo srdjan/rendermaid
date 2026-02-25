@@ -1,20 +1,19 @@
 {
   "name": "@srdjan/rendermaid",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance, multi-format output, and comprehensive type safety",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rendermaid/core.git"
+    "url": "git+https://github.com/srdjan/rendermaid.git"
   },
-  "homepage": "https://github.com/rendermaid/core#readme",
+  "homepage": "https://github.com/srdjan/rendermaid",
   "bugs": {
-    "url": "https://github.com/rendermaid/core/issues"
+    "url": "https://github.com/srdjan/rendermaid/issues"
   },
   "author": {
-    "name": "RenderMaid Team",
-    "email": "team@rendermaid.dev",
-    "url": "https://github.com/rendermaid"
+    "name": "Srdjan & Clody",
+    "email": "team@rendermaid.dev"
   },
   "keywords": [
     "mermaid",

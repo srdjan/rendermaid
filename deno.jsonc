@@ -1,18 +1,18 @@
 {
   // RenderMaid - High-performance Mermaid diagram processing library
-  "name": "@rendermaid/core",
-  "version": "0.0.1",
+  "name": "@srdjan/rendermaid",
+  "version": "0.7.0",
   "description": "High-performance, functional TypeScript library for parsing and rendering Mermaid diagrams with optimized performance and multi-format output",
   "license": "MIT",
   // Repository information
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rendermaid/core.git"
+    "url": "git+https://github.com/srdjan/rendermaid.git"
   },
   "bugs": {
-    "url": "https://github.com/rendermaid/core/issues"
+    "url": "https://github.com/srdjan/rendermaid/issues"
   },
-  "homepage": "https://github.com/rendermaid/core",
+  "homepage": "https://github.com/srdjan/rendermaid",
   // Package metadata for discovery
   "keywords": [
     "mermaid",
@@ -32,7 +32,7 @@
     "jsr"
   ],
   "author": {
-    "name": "RenderMaid Team",
+    "name": "Srdjan & Clody",
     "email": "team@rendermaid.dev"
   },
   // Module exports
@@ -43,10 +43,9 @@
   "tasks": {
     "test": "deno test --allow-write --allow-read",
     "test-watch": "deno test --allow-write --allow-read --watch",
-    "e2e": "deno run --allow-write ./tests/e2e.ts",
-    "dev": "deno run --allow-write main.ts",
-    "demo": "deno run --allow-write main.ts",
-    "perf": "deno run --allow-write performance.ts",
+    "e2e": "deno run --allow-write --allow-read ./tests/e2e.ts",
+    "demo": "deno run --allow-write --allow-read ./examples/basic.ts",
+    "perf": "deno run --allow-write --allow-read ./tests/performance.ts",
     "markdown": "deno run --allow-write --allow-read examples/advanced.ts",
     "publish": "deno publish",
     "fmt": "deno fmt",
@@ -64,11 +63,7 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true
+    "noUnusedParameters": true
   },
   // Code formatting
   "fmt": {

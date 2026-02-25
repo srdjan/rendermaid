@@ -229,12 +229,6 @@ const CONNECTION_PATTERNS = [
   { pattern: /-->/, type: "arrow" as const }
 ] as const;
 
-// Cached regex patterns
-// Cache for compiled regex patterns (currently unused but reserved for future optimizations)
-// const REGEX_CACHE = {
-//   identifier: /[a-zA-Z_][a-zA-Z0-9_]*/,
-// } as const;
-
 // Fast line tokenizer - properly anchored patterns
 const tokenizeLine = (line: string): Array<{ type: string; value: string; position: number }> => {
   const tokens: Array<{ type: string; value: string; position: number }> = [];

@@ -1,11 +1,17 @@
 # SVG Rendering Improvements Summary
 
+> **Note**: This documents the original SVG improvements. A subsequent refactoring pass
+> consolidated `getNodeDimensions` into `calculateNodeDimensions`, decomposed
+> `improvedRouteEdgePath` into three focused helpers (`calculatePorts`,
+> `generateOrthogonalPath`, `avoidCollisions`), and replaced all magic numbers with
+> named constants in `LAYOUT` and `RENDERING` objects.
+
 ## Overview
 Fixed three critical visual issues in the SVG diagram rendering system to ensure clean, professional-quality output with proper visual separation between labels, lines, and nodes while maintaining accurate connectivity.
 
 ## Issues Fixed
 
-### 1. Edge Label Positioning ✅
+### 1. Edge Label Positioning
 **Problem**: Labels were rendered directly on top of connection lines, making both text and line difficult to read.
 
 **Solution**: 
@@ -27,7 +33,7 @@ const offsetY = Math.cos(segmentAngle) * 12;
       fill="white" stroke="none" rx="2" opacity="0.9"/>
 ```
 
-### 2. Connection Point Accuracy ✅
+### 2. Connection Point Accuracy
 **Problem**: Connection lines had gaps between endpoints and node boundaries, not properly connecting to node edges.
 
 **Solution**:
@@ -56,7 +62,7 @@ if (nodeShape === "circle") {
 }
 ```
 
-### 3. Line Routing Conflicts ✅
+### 3. Line Routing Conflicts
 **Problem**: Connection lines passed through or overlapped other nodes instead of routing around them.
 
 **Solution**:
@@ -86,13 +92,15 @@ const waypoint3 = { x: toPos.x - dx * 0.25, y: toPos.y + routeDirection * maxCle
 ## Functions Added/Modified
 
 ### New Functions
-- `getNodeDimensions(shape: string)` - Returns accurate dimensions for each node shape
-- `getAccurateConnectionPoint()` - Calculates precise connection points per shape
+- `calculateNodeDimensions(label, shape)` - Returns accurate dimensions based on label content and node shape (consolidates the former `getNodeDimensions`)
+- `calculatePorts()` - Computes exit/entry port positions on node boundaries
+- `generateOrthogonalPath()` - Creates straight or Z-shaped orthogonal paths between ports
+- `avoidCollisions()` - Iteratively shifts paths to avoid intermediate nodes
 - `lineIntersectsNode()` - Shape-aware collision detection
 - `distanceFromPointToLine()` - Geometric helper for circle collision
 - `lineSegmentIntersectsRect()` - Rectangle intersection helper
 - `lineIntersectsLine()` - Line-line intersection helper
-- `improvedRouteEdgePath()` - Enhanced routing with collision avoidance
+- `improvedRouteEdgePath()` - Orchestrator that delegates to `calculatePorts`, `generateOrthogonalPath`, and `avoidCollisions`
 - `renderImprovedSvgEdge()` - Better edge rendering with label backgrounds
 
 ### Modified Functions
@@ -102,16 +110,16 @@ const waypoint3 = { x: toPos.x - dx * 0.25, y: toPos.y + routeDirection * maxCle
 ## Visual Improvements
 
 ### Before
-- ❌ Labels directly on lines (unreadable)
-- ❌ Connection gaps at node boundaries
-- ❌ Lines passing through nodes
-- ❌ Basic arrow positioning
+- Labels directly on lines (unreadable)
+- Connection gaps at node boundaries
+- Lines passing through nodes
+- Basic arrow positioning
 
 ### After
-- ✅ Labels with white backgrounds (readable)
-- ✅ Precise connection to node edges
-- ✅ Multi-segment routing around obstacles
-- ✅ Professional arrow positioning
+- Labels with white backgrounds (readable)
+- Precise connection to node edges
+- Multi-segment routing around obstacles
+- Professional arrow positioning
 
 ## Testing
 - Created comprehensive test suite for all improvements
