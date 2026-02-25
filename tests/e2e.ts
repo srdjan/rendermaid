@@ -233,9 +233,9 @@ const runDemo = () => {
       if (result.success) {
         // Save SVG files to disk
         if (format === 'svg') {
-          const filename = `diagram_${index + 1}.svg`;
+          const filename = `${OUT_DIR}diagram_${index + 1}.svg`;
           Deno.writeTextFileSync(filename, result.data);
-          console.log(`  ${format.toUpperCase()}: Saved to ${filename}`);
+          console.log(`  ${format.toUpperCase()}: Saved to tests/out/diagram_${index + 1}.svg`);
         } else {
           const preview = result.data.length > 100
             ? result.data.substring(0, 100) + "..."
@@ -282,8 +282,20 @@ export {
   compose
 };
 
+// Output directory for generated artifacts
+const OUT_DIR = new URL("./out/", import.meta.url).pathname;
+
+const ensureOutDir = () => {
+  try {
+    Deno.mkdirSync(OUT_DIR, { recursive: true });
+  } catch {
+    // already exists
+  }
+};
+
 // Execute demo if running directly
 if (import.meta.main) {
+  ensureOutDir();
   runDemo();
 }
 
